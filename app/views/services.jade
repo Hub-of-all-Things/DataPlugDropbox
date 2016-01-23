@@ -3,14 +3,12 @@ extends layout
 block content
   h1= title
   p= stepInformation
-  form(action=hatServicesLink, method='post')
-    input(type="checkbox", name="dataSources", value="posts")
-    | Posts
-    br
-    input(type="checkbox", name="dataSources", value="events")
-    | Events
-    br
-    input(type="checkbox", name="dataSources", value="profile")
-    | Profile
-    br
-    input(type="submit", value="Authorise synchronisation")
+  p Folder synchronisation list:
+  ul.folderList#folderList
+    - each item in folderList
+      li.tablerow
+        input.tablecell(type="checkbox", name="recursive", value=item.path_lower)
+        span.tablecell= item.path_lower
+
+  input(type="text", name="folderName")
+  button#addFolder Add Folder

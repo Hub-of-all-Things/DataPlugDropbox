@@ -1,12 +1,14 @@
 var express = require('express');
 var router = express.Router();
 var request = require('request');
+var qs = require('qs');
+var _ = require('lodash');
 var models = require('./models');
 var services = require('./services');
 var fbConfig = require('./config/fbHatModels');
 var config = require('./config');
 
-router.get('/facebook', function (req, res, next) {
+router.get('/dropbox', function (req, res, next) {
 
   // TODO: implement method to validate access token for given url
   if (req.query.hatAccessToken && req.query.hatUrl) {
@@ -21,11 +23,10 @@ router.get('/facebook', function (req, res, next) {
         req.session.hatUrl = account.hatBaseUrl;
         req.session.accountId = account._id;
         res.render('index', {
-          title: 'Welcome to HAT Facebook Data Plug',
-          stepInformation: 'Step 1 - Authorise us to access your private Facebook data',
-          facebookAppId: process.env.FB_APP_ID,
-          redirectUri: config.webServerURL + '/facebook/authenticate',
-          fbAccessScope: config.fb.accessScope });
+          title: 'Welcome to HAT Dropbox Pictures Data Plug',
+          stepInformation: 'Step 1 - Authorise us to access your private Dropbox data',
+          dropboxAppKey: config.dbox.appKey,
+          redirectUri: config.webServerURL + '/dropbox/authenticate' });
 
     });
 
@@ -35,35 +36,66 @@ router.get('/facebook', function (req, res, next) {
 
 });
 
-router.get('/facebook/authenticate', function (req, res, next) {
+router.get('/dropbox/authenticate', function (req, res, next) {
+
   if (req.query.code) {
 
-    var tokenRequestUrl = 'https://graph.facebook.com/v2.5/oauth/access_token?client_id=' +
-      config.fb.appID + '&redirect_uri=' + config.webServerURL + '/facebook/authenticate&client_secret=' +
-      config.fb.appSecret + '&code=' + req.query.code;
+    var tokenRequestOptions = {
+      url: 'https://api.dropboxapi.com/1/oauth2/token',
+      form: {
+        code: req.query.code,
+        grant_type: 'authorization_code',
+        client_id: config.dbox.appKey,
+        client_secret: config.dbox.appSecret,
+        redirect_uri: config.webServerURL + '/dropbox/authenticate'
+      }
+    };
 
-    request.get(tokenRequestUrl, function (err, response, body) {
-        if (err) return res.send('Facebook authentication failed.');
+    request.post(tokenRequestOptions, function (err, response, body) {
+        if (err) return res.send('Dropbox authentication failed.');
 
         var parsedBody = JSON.parse(body);
-        req.session.fbAccessToken = parsedBody.access_token;
+        req.session.dboxAccessToken = parsedBody.access_token;
 
         // Workaround for a bug in a session module
         req.session.save(function (err) {
-          res.redirect('/facebook/authenticate');
+          res.redirect('/dropbox/sync');
         });
 
     });
 
-  } else if (true) {
-    res.render('services', {
-    title: 'HAT Facebook Data Plug',
-    stepInformation: 'Step 2 - Schedule record synchronisation',
-    hatServicesLink: config.webServerURL + '/services' });
   } else {
-    res.send('Authentication with facebook failed. Please start again.');
+    res.send('Authentication with dropbox failed. Please start again.');
   }
 
+});
+
+router.get('/dropbox/sync', function (req, res, next) {
+  var requestOptions = {
+    url: 'https://api.dropboxapi.com/2/files/list_folder',
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer ' + req.session.dboxAccessToken,
+      'Content-Type': 'application/json'
+    },
+    body: {
+      path: '',
+      recursive: false
+    },
+    json: true
+  };
+
+  request(requestOptions, function (err, response, body) {
+    if (err) return res.send('Dropbox API cannot be contacted at this moment.');
+
+    var folderList = _.filter(body.entries, { '.tag': "folder"} );
+
+    res.render('services', {
+      title: 'HAT Dropbox Data Plug',
+      stepInformation: 'Step 2 - Schedule record synchronisation',
+      hatServicesLink: config.webServerURL + '/services',
+      folderList: folderList });
+    });
 });
 
 router.post('/services', function (req, res, next) {
