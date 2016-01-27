@@ -80,8 +80,6 @@ internals.syncSingleModelData = async.compose(
   internals.asyncify(hat.transformObjectToHat),
   internals.getDboxFolderContent);
 
-internals.retrieveDataSourceProperties
-
 internals.getDboxFolderContent = function (accessToken, folder, callback) {
   var requestOptions = {
     url: 'https://api.dropboxapi.com/2/files/list_folder',
