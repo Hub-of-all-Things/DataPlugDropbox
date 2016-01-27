@@ -7,18 +7,29 @@ var models = require('./models');
 var config = require('./config');
 var _ = require('lodash');
 
-var Agenda = require('agenda');
-var agenda = new Agenda({ db: { address: config.dbURL } });
-
 var internals = {};
 
+internals.asyncify = function(f) {
+  return function _asyncify() {
+    var args = Array.prototype.slice.call(arguments, 0);
+    var argsWithoutLast = args.slice(0, -1);
+    var callback = args[args.length-1];
+
+    var result, error;
+
+    try {
+      result = f.apply(this, argsWithoutLast);
+    } catch (e) {
+      error = e;
+    }
+
+    setTimeout(function () {
+      callback(error, result);
+    }, 0);
+  };
+}
+
 exports.addUpdateJob = function (name, source, hatAccessToken, frequency) {
-
-  var jobName = 'update ' + source + ' ' + name + ' for ' + hatAccessToken;
-
-  agenda.define(jobName, function (job, done) {
-
-  var data = job.attrs.data;
 
   models.Accounts.find({ hatToken: data.hatAccessToken })
     .populate({ path: 'dataSources', match: { name: data.name, source: data.source } })
@@ -46,8 +57,6 @@ exports.addUpdateJob = function (name, source, hatAccessToken, frequency) {
       });
     });
 
-});
-
   var options = {
     name: name,
     source: source,
@@ -57,6 +66,48 @@ exports.addUpdateJob = function (name, source, hatAccessToken, frequency) {
   agenda.every(frequency, jobName, options);
 
   agenda.start();
+};
+
+exports.syncModelData = function (dboxAccessToken, hatAccessToken, folderList, callback) {
+
+  async.eachSeries(folderList, async.apply(internals.syncSingleModelData, accessToken), function done() {
+
+  });
+};
+
+internals.syncSingleModelData = async.compose(
+  hat.createRecords,
+  internals.asyncify(hat.transformObjectToHat),
+  internals.getDboxFolderContent);
+
+internals.retrieveDataSourceProperties
+
+internals.getDboxFolderContent = function (accessToken, folder, callback) {
+  var requestOptions = {
+    url: 'https://api.dropboxapi.com/2/files/list_folder',
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer ' + accessToken,
+      'Content-Type': 'application/json'
+    },
+    body: {
+      path: folder.folderName,
+      recursive: folder.recursive
+    },
+    json: true
+  };
+
+  request(requestOptions, function (err, response, body) {
+    if (err) return callback(err);
+
+    var filesOnlyArray = _.filter(body.entries, { '.tag': 'file'} );
+
+    callback(null, filesOnlyArray);
+  });
+};
+
+internals.setupWebhook = function () {
+  //TO-DO: Set-up Dropbox webhook
 };
 
 exports.findModelOrCreate = function (name, source, url, accessToken, dataSourceModelConfig, callback) {
@@ -90,24 +141,3 @@ exports.findModelOrCreate = function (name, source, url, accessToken, dataSource
   });
 
 };
-
-internals.getGraphNode = function (node, accessToken, lastUpdated, callback) {
-  var requestOptions = {
-    url: fbReqGen.getRequestUrl(node, accessToken, lastUpdated),
-    method: 'GET',
-    json: true
-  };
-
-  request(requestOptions, function (err, response, body) {
-    if (err) return callback(err);
-
-    var newLastUpdated = parseInt(Date.now() / 1000, 10).toString();
-
-    if (node === 'profile') {
-      return callback(null, [body], newLastUpdated);
-    } else {
-      return callback(null, body.data, newLastUpdated);
-    }
-  });
-}
-

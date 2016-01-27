@@ -14,8 +14,19 @@ var HatDataSourceSchema = new Schema({
   dataSourceModel: Schema.Types.Mixed,
   hatIdMapping: Schema.Types.Mixed,
   frequency: String,
-  lastUpdated: { type: String }
+  lastUpdated: { type: String },
+});
+
+var FolderSchema = new Schema({
+    folderName: { type: String, required: true },
+    recursive: { type: Boolean, default: false }
+});
+
+var SubscribedFoldersSchema = new Schema({
+  accountId: { type: Schema.Types.ObjectId, ref: 'Accounts' },
+  folderList: [FolderSchema]
 });
 
 exports.HatDataSource = mongoose.model('HatDataSource', HatDataSourceSchema);
 exports.Accounts = mongoose.model('Accounts', AccountsSchema);
+exports.SubscribedFolders = mongoose.model('SubscribedFolders', SubscribedFoldersSchema);

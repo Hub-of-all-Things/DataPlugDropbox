@@ -5,7 +5,7 @@ var qs = require('qs');
 var _ = require('lodash');
 var models = require('./models');
 var services = require('./services');
-var fbConfig = require('./config/fbHatModels');
+var dboxConfig = require('./config/dboxHatModels');
 var config = require('./config');
 
 router.get('/dropbox', function (req, res, next) {
@@ -98,47 +98,64 @@ router.get('/dropbox/sync', function (req, res, next) {
     });
 });
 
-router.post('/services', function (req, res, next) {
+router.post('/dropbox/services', function (req, res, next) {
 
-  var dataSources = req.body.dataSources;
-  if (typeof dataSources === 'string') dataSources = [dataSources];
+  try {
+    var folderList = req.body.folderList;
+    if (typeof folderList === 'string') folderList = [folderList];
+    var recursive = req.body.recursive;
+    if (typeof recursive === 'string') recursive = [recursive];
+  } catch (e) {
+    console.log(e);
+  }
 
-  var numberOfDataSources = dataSources.length;
-  var completed = 0;
+  var formattedFolderList = _.map(folderList, function (folder) {
+    return {
+      folderName: folder,
+      recursive: recursive.indexOf(folder) >= 0
+    };
+  });
 
-  dataSources.forEach(function (dataSource) {
-    services.findModelOrCreate(dataSource, 'facebook', req.session.hatUrl, req.session.hatAccessToken, fbConfig[dataSource], function (err, hatIdMapping) {
+  var dbFileEntry = new models.SubscribedFolders({
+    accountId: req.session.accountId,
+    folderList: formattedFolderList
+  });
 
-      var hatDataSource = {
-        name: dataSource,
-        source: 'facebook',
-        sourceAccessToken: req.session.fbAccessToken,
-        dataSourceModel: fbConfig[dataSource],
-        hatIdMapping: hatIdMapping,
-        lastUpdated: '1'
-      };
+  dbFileEntry.save(function (err, entry) {
+    if (err) return res.send('There has been an error');
 
-      var dbEntry = new models.HatDataSource(hatDataSource);
+    console.log('Folder list successfully saved.');
+  });
 
-      dbEntry.save(function (err, result) {
-        if (err) return console.log(err);
+  services.findModelOrCreate('files', 'dropbox', req.session.hatUrl, req.session.hatAccessToken, dboxConfig['files'], function (err, hatIdMapping) {
 
-        models.Accounts.findByIdAndUpdate(
-          req.session.accountId,
-          { $push: { 'dataSources': result._id } },
-          { safe: true, upsert: true, new: true },
-          function (err, newAccount) {
+    console.log('ID mapping saved successfully');
+    var hatDataSource = {
+      name: 'files',
+      source: 'dropbox',
+      sourceAccessToken: req.session.dboxAccessToken,
+      dataSourceModel: dboxConfig['files'],
+      hatIdMapping: hatIdMapping,
+      lastUpdated: '1'
+    }
 
-              completed++;
-              services.addUpdateJob(dataSource, 'facebook', req.session.hatAccessToken, '30 minutes');
+    var dbEntry = new models.HatDataSource(hatDataSource);
+    console.log("Saving to db:", dbEntry);
+    dbEntry.save(function (err, result) {
+      if (err) return console.log(err);
 
-              if (completed >= numberOfDataSources) {
-                res.send('Congratulations! ' + dataSources + ' are now being automatically synchronized with your HAT.');
-              }
-          });
-        });
-      });
+      models.Accounts.findByIdAndUpdate(
+        req.session.accountId,
+        { $push: { 'dataSources': result._id } },
+        { safe: true, upsert: true, new: true },
+        function(err, newAccount) {
+
+          return res.send('Valio');
+        }
+        );
     });
+  });
+
 });
 
 module.exports = router;

@@ -85,7 +85,7 @@ exports.createDataSourceModel = function (dataSourceModelConfig, callback) {
   });
 };
 
-exports.createRecords = function (record, hatAccessToken, callback) {
+exports.createRecords = function (hatAccessToken, record, callback) {
 
   internals.requestOptions.url = internals.requestOptions.mainUrl + '/record/values';
   internals.requestOptions.method = 'POST';
@@ -139,11 +139,21 @@ internals.mapDataSourceModelIds = function (table, prefix) {
   return tableMapping.concat(flattenedSubTableMapping);
 };
 
-exports.transformObjectToHat = function (name, inputObj, hatIdMapping) {
+/**
+ * Transforms given JSON structures into valid HAT records
+ * Will fail if appropriate ID mapping is not provided
+ * Currently object values of Array type are not supported
+ * @param {string} name
+ * @param {object | array} jsonObject
+ * @param {object} hatIdMapping
+ * @returns {array | null} HAT record objects
+ */
 
-  if (_.isArray(inputObj)) {
+exports.transformObjectToHat = function (name, jsonObject, hatIdMapping) {
 
-    return _.map(inputObj, function (node) {
+  if (_.isArray(jsonObject)) {
+
+    return _.map(jsonObject, function (node) {
 
       var values = internals.generateHatValues(node, hatIdMapping, '');
 
@@ -154,9 +164,9 @@ exports.transformObjectToHat = function (name, inputObj, hatIdMapping) {
 
     });
 
-  } else if (_.isObject(inputObj)) {
+  } else if (_.isObject(jsonObject)) {
 
-    var values = internals.generateHatValues(inputObj, hatIdMapping, '');
+    var values = internals.generateHatValues(jsonObject, hatIdMapping, '');
 
     return [{
       record: { name: name },
@@ -165,14 +175,24 @@ exports.transformObjectToHat = function (name, inputObj, hatIdMapping) {
 
   }
 
-  return null;
+  throw 'Provided data format is invalid';
 
 };
+
+/**
+ * Converts single object node to HAT record values
+ * Operates recursively
+ * Currently object values of Array type are not supported
+ * @param {object} node
+ * @param {object} hatIdMapping
+ * @param {string} prefix
+ * @returns {object} HAT record object
+ */
 
 internals.generateHatValues = function (node, hatIdMapping, prefix) {
 
   if (prefix !== '')
-    prefix = prefix + '_'
+    prefix = prefix + '_';
 
   var convertedData = _.map(node, function (value, key) {
 
@@ -187,6 +207,10 @@ internals.generateHatValues = function (node, hatIdMapping, prefix) {
       return internals.generateHatValues(value, hatIdMapping, prefix+key);
 
     } else {
+
+      if (hatIdMapping[prefix+key] === 'undefined') throw 'There was something wrong with ID mapping';
+
+      if (key === '.tag') key = 'tag';
 
       var newHatValue = {
         value: value,
