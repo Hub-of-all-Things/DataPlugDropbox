@@ -7,21 +7,23 @@ var models = require('./models');
 var services = require('./services');
 var dboxConfig = require('./config/dboxHatModels');
 var config = require('./config');
+var helpers = require('./helpers');
 
 router.get('/dropbox', function (req, res, next) {
 
   // TODO: implement method to validate access token for given url
   if (req.query.hatAccessToken && req.query.hatUrl) {
 
-    var query = { hatToken: req.query.hatAccessToken, hatBaseUrl: req.query.hatUrl };
+    var query = { hatAccessToken: req.query.hatAccessToken,
+                  hatHost: req.query.hatUrl,
+                  name: 'files',
+                  source: 'dropbox' };
 
-    models.Accounts.findOneAndUpdate(query, {}, { new: true, upsert: true },
-      function(err, account) {
-        if (err) return res.render('error', { message: err });
+    helpers.getDataSourceOrCreate(query, function (err, dataSource) {
 
-        req.session.hatAccessToken = account.hatToken;
-        req.session.hatUrl = account.hatBaseUrl;
-        req.session.accountId = account._id;
+        if (err) return res.render('error', { message: 'Internal server error' });
+
+        req.session.dataSource = dataSource;
         res.render('index', {
           title: 'Welcome to HAT Dropbox Pictures Data Plug',
           stepInformation: 'Step 1 - Authorise us to access your private Dropbox data',
@@ -31,7 +33,7 @@ router.get('/dropbox', function (req, res, next) {
     });
 
   } else {
-    res.send("Sorry, provided access token or hat url address are not valid. Please try again.");
+    res.render('error', { message: 'Invalid HAT credentials provided. Please speak to your HAT administrator about this issue.' });
   }
 
 });
@@ -55,7 +57,7 @@ router.get('/dropbox/authenticate', function (req, res, next) {
         if (err) return res.send('Dropbox authentication failed.');
 
         var parsedBody = JSON.parse(body);
-        req.session.dboxAccessToken = parsedBody.access_token;
+        req.session.dataSource.sourceAccessToken = parsedBody.access_token;
 
         // Workaround for a bug in a session module
         req.session.save(function (err) {
@@ -65,17 +67,18 @@ router.get('/dropbox/authenticate', function (req, res, next) {
     });
 
   } else {
-    res.send('Authentication with dropbox failed. Please start again.');
+    res.render('error', { message: 'Authentication with dropbox failed. Please start again.' });
   }
 
 });
 
 router.get('/dropbox/sync', function (req, res, next) {
+
   var requestOptions = {
     url: 'https://api.dropboxapi.com/2/files/list_folder',
     method: 'POST',
     headers: {
-      'Authorization': 'Bearer ' + req.session.dboxAccessToken,
+      'Authorization': 'Bearer ' + req.session.dataSource.sourceAccessToken,
       'Content-Type': 'application/json'
     },
     body: {
@@ -127,35 +130,17 @@ router.post('/dropbox/services', function (req, res, next) {
     console.log('Folder list successfully saved.');
   });
 
-  services.findModelOrCreate('files', 'dropbox', req.session.hatUrl, req.session.hatAccessToken, dboxConfig['files'], function (err, hatIdMapping) {
+  req.session.dataSource.dataSourceModel = dboxCondig['files'];
 
-    console.log('ID mapping saved successfully');
-    var hatDataSource = {
-      name: 'files',
-      source: 'dropbox',
-      sourceAccessToken: req.session.dboxAccessToken,
-      dataSourceModel: dboxConfig['files'],
-      hatIdMapping: hatIdMapping,
-      lastUpdated: '1'
-    }
+  services.findModelOrCreate(req.session.dataSource, function (err, dataSource) {
 
-    var dbEntry = new models.HatDataSource(hatDataSource);
-    console.log("Saving to db:", dbEntry);
-    dbEntry.save(function (err, result) {
-      if (err) return console.log(err);
+    dataSource.lastUpdated = '1';
 
-      models.Accounts.findByIdAndUpdate(
-        req.session.accountId,
-        { $push: { 'dataSources': result._id } },
-        { safe: true, upsert: true, new: true },
-        function(err, newAccount) {
+    helpers.updateDataSource(dataSource, function (err, savedDataSource) {
 
-          return res.send('Valio');
-        }
-        );
+      return res.send('Valio');
     });
   });
-
 });
 
 module.exports = router;
