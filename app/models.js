@@ -6,11 +6,12 @@ var HatDataSourceSchema = new Schema({
   hatHost: String,
   name: { type: String, required: true },
   source: { type: String, required: true },
+  sourceHatId: Number,
   sourceAccessToken: String,
   dataSourceModel: Schema.Types.Mixed,
   hatIdMapping: Schema.Types.Mixed,
   updateFrequency: String,
-  lastUpdated: { type: String },
+  lastUpdated: String,
 });
 
 var FolderSchema = new Schema({

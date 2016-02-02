@@ -32,47 +32,47 @@ internals.requestOptions = {
 // Network methods
 /****************/
 
-exports.getDataSourceId = function (name, source, callback) {
+exports.getDataSourceId = function (dataSource, callback) {
 
   internals.requestOptions.url = internals.requestOptions.mainUrl + '/table';
-  internals.requestOptions.qs.name = name;
-  internals.requestOptions.qs.source = source;
+  internals.requestOptions.qs.name = dataSource.name;
+  internals.requestOptions.qs.source = dataSource.source;
 
   request(internals.requestOptions, function (err, response, body) {
 
     internals.requestOptions.qs.name = null;
     internals.requestOptions.qs.source = null;
     var foundError = internals.handleErrors(err, response);
-    var dataSourceId;
-    if (body.id) {
-      dataSourceId = body.id;
-    }
 
-    return callback(foundError, dataSourceId);
+    if (!foundError) dataSource.sourceHatId = body.id;
+
+    return callback(foundError, dataSource);
 
   });
 
 };
 
-exports.getDataSourceModel = function (dataSourceId, callback) {
+exports.getDataSourceModel = function (dataSource, callback) {
 
-  internals.requestOptions.url = internals.requestOptions.mainUrl + '/table/' + dataSourceId;
+  internals.requestOptions.url = internals.requestOptions.mainUrl + '/table/' + dataSource.sourceHatId;
 
   request(internals.requestOptions, function (err, response, body) {
 
-    var foundError = internals.handleErrors(err, response)
+    var foundError = internals.handleErrors(err, response);
 
-    return callback(foundError, body);
+    if (!foundError) dataSource.rawModelData = body;
+
+    return callback(foundError, dataSource);
 
   });
 
 };
 
-exports.createDataSourceModel = function (dataSourceModelConfig, callback) {
+exports.createDataSourceModel = function (dataSource, callback) {
 
   internals.requestOptions.url = internals.requestOptions.mainUrl + '/table';
   internals.requestOptions.method = 'POST';
-  internals.requestOptions.body = dataSourceModelConfig;
+  internals.requestOptions.body = dataSource.dataSourceModel;
 
   request(internals.requestOptions, function (err, response, body) {
 
@@ -80,18 +80,20 @@ exports.createDataSourceModel = function (dataSourceModelConfig, callback) {
     internals.requestOptions.body = null;
     var foundError = internals.handleErrors(err, response);
 
-    return callback(foundError, body);
+    if (!foundError) dataSource.rawModelData = body;
+
+    return callback(foundError, dataSource);
 
   });
 };
 
-exports.createRecords = function (hatAccessToken, record, callback) {
+exports.createRecords = function (dataSource, callback) {
 
   internals.requestOptions.url = internals.requestOptions.mainUrl + '/record/values';
   internals.requestOptions.method = 'POST';
   internals.requestOptions.json = false;
-  internals.requestOptions.qs.access_token = hatAccessToken;
-  internals.requestOptions.body = internals.normalizeJsonValueTypes(record);
+  internals.requestOptions.qs.access_token = dataSource.hatAccessToken;
+  internals.requestOptions.body = internals.normalizeJsonValueTypes(dataSource.data);
 
   request(internals.requestOptions, function (err, response, body) {
 
@@ -100,9 +102,14 @@ exports.createRecords = function (hatAccessToken, record, callback) {
     internals.requestOptions.body = null;
     var foundError = internals.handleErrors(err, response);
 
-    console.log('Posted to HAT: ', JSON.parse(body));
+    if (!foundError) {
+      console.log('Posted to HAT: ', JSON.parse(body));
+      delete dataSource.data;
+    } else {
+      console.log('There has been and ERROR ERROR');
+    }
 
-    return callback(foundError);
+    return callback(foundError, dataSource);
 
   });
 
@@ -111,12 +118,15 @@ exports.createRecords = function (hatAccessToken, record, callback) {
 // Data transformation methods
 /****************************/
 
-exports.mapDataSourceModelIds = function (table) {
+exports.mapDataSourceModelIds = function (dataSource) {
 
-  var hatIdMappingArray = internals.mapDataSourceModelIds(table, '');
+  var hatIdMappingArray = internals.mapDataSourceModelIds(dataSource.rawModelData, '');
   var hatIdMappingObject = _.zipObject(hatIdMappingArray);
 
-  return hatIdMappingObject;
+  dataSource.hatIdMapping = hatIdMappingObject;
+  delete dataSource.rawModelData;
+
+  return dataSource;
 };
 
 internals.mapDataSourceModelIds = function (table, prefix) {
@@ -149,29 +159,33 @@ internals.mapDataSourceModelIds = function (table, prefix) {
  * @returns {array | null} HAT record objects
  */
 
-exports.transformObjectToHat = function (name, jsonObject, hatIdMapping) {
+exports.transformObjectToHat = function (dataSource) {
 
-  if (_.isArray(jsonObject)) {
+  if (_.isArray(dataSource.data)) {
 
-    return _.map(jsonObject, function (node) {
+    dataSource.data = _.map(dataSource.data, function (node) {
 
-      var values = internals.generateHatValues(node, hatIdMapping, '');
+      var values = internals.generateHatValues(node, dataSource.hatIdMapping, '');
 
       return {
-        record: { name: name },
+        record: { name: dataSource.name },
         values: values
       };
 
     });
 
-  } else if (_.isObject(jsonObject)) {
+    return dataSource;
 
-    var values = internals.generateHatValues(jsonObject, hatIdMapping, '');
+  } else if (_.isObject(dataSource.data)) {
 
-    return [{
-      record: { name: name },
+    var values = internals.generateHatValues(dataSource.data, dataSource.hatIdMapping, '');
+
+    dataSource.data = [{
+      record: { name: dataSource.name },
       values: values
     }];
+
+    return dataSource;
 
   }
 

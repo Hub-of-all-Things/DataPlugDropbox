@@ -3,6 +3,7 @@
   "version": "0.0.2",
   "private": false,
   "scripts": {
+    "test": "mocha ./test/**/*.spec.js",
     "start": "node ./bin/www"
   },
   "dependencies": {

@@ -68,24 +68,30 @@ exports.addUpdateJob = function (name, source, hatAccessToken, frequency) {
   agenda.start();
 };
 
-exports.syncModelData = function (dboxAccessToken, hatAccessToken, folderList, callback) {
+exports.syncModelData = function (dataSource, folderList, callback) {
 
-  async.eachSeries(folderList, async.apply(internals.syncSingleModelData, accessToken), function done() {
+  async.eachSeries(folderList, async.apply(internals.syncSingleModelData, dataSource), function done(err, dataSource) {
+    if (err) return callback(err);
 
+    helpers.updateDataSource(dataSource, function (err, savedDataSource) {
+      if (err) return callback(err);
+
+      return callback(null, savedDataSource);
+    });
   });
 };
 
 internals.syncSingleModelData = async.compose(
   hat.createRecords,
   internals.asyncify(hat.transformObjectToHat),
-  internals.getDboxFolderContent);
+  internals.getDboxFolderContent;
 
-internals.getDboxFolderContent = function (accessToken, folder, callback) {
+internals.getDboxFolderContent = function (dataSource, folder, callback) {
   var requestOptions = {
     url: 'https://api.dropboxapi.com/2/files/list_folder',
     method: 'POST',
     headers: {
-      'Authorization': 'Bearer ' + accessToken,
+      'Authorization': 'Bearer ' + dataSource.sourceAccessToken,
       'Content-Type': 'application/json'
     },
     body: {
@@ -99,8 +105,9 @@ internals.getDboxFolderContent = function (accessToken, folder, callback) {
     if (err) return callback(err);
 
     var filesOnlyArray = _.filter(body.entries, { '.tag': 'file'} );
+    dataSource.data = filesOnlyArray;
 
-    callback(null, filesOnlyArray);
+    callback(null, dataSource);
   });
 };
 
@@ -108,33 +115,33 @@ internals.setupWebhook = function () {
   //TO-DO: Set-up Dropbox webhook
 };
 
-exports.findModelOrCreate = function (name, source, url, accessToken, dataSourceModelConfig, callback) {
+exports.findModelOrCreate = function (dataSource, callback) {
 
-  hat.setUrl(url);
-  hat.setAccessToken(accessToken);
+  hat.setUrl(dataSource.hatHost);
+  hat.setAccessToken(dataSource.hatAccessToken);
 
   procedure = [
-    async.apply(hat.getDataSourceId, name, source),
+    async.apply(hat.getDataSourceId, dataSource),
     hat.getDataSourceModel
   ];
 
-  async.waterfall(procedure, function (err, result) {
+  async.waterfall(procedure, function (err, dataSourceWithRawModel) {
 
     if (err) {
 
-      return hat.createDataSourceModel(dataSourceModelConfig, function (error, body) {
+      return hat.createDataSourceModel(dataSource, function (error, dataSourceWithRawModel) {
         // TO DO:
         // if (error) TRY AGAIN
-        var hatIdMapping = hat.mapDataSourceModelIds(body, '');
+        var updatedDataSource = hat.mapDataSourceModelIds(dataSourceWithRawModel);
 
-        callback(null, hatIdMapping);
+        return callback(null, updatedDataSource);
       });
 
     }
 
-    var hatIdMapping = hat.mapDataSourceModelIds(result, '');
+    var updatedDataSource = hat.mapDataSourceModelIds(dataSourceWithRawModel);
 
-    callback(null, hatIdMapping);
+    return callback(null, updatedDataSource);
 
   });
 

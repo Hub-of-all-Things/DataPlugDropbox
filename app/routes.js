@@ -138,7 +138,11 @@ router.post('/dropbox/services', function (req, res, next) {
 
     helpers.updateDataSource(dataSource, function (err, savedDataSource) {
 
-      return res.send('Valio');
+      services.syncModelData(savedDataSource, formattedFolderList, function (err, updatedSavedDataSource) {
+        if (err) return res.render('error', { message: 'There has been and error during update process. Please try again.' });
+
+        return res.send('Hoorey, sync completed!');
+      });
     });
   });
 });
