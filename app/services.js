@@ -110,7 +110,8 @@ internals.getDboxFolderContent = function (dataSource, folder, callback) {
     },
     body: {
       path: folder.folderName,
-      recursive: folder.recursive
+      recursive: folder.recursive,
+      include_media_info: true
     },
     json: true
   };

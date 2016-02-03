@@ -105,8 +105,10 @@ router.post('/dropbox/services', function (req, res, next) {
 
   try {
     var folderList = req.body.folderList;
+    if (!folderList) folderList = [];
     if (typeof folderList === 'string') folderList = [folderList];
     var recursive = req.body.recursive;
+    if (!recursive) recursive = [];
     if (typeof recursive === 'string') recursive = [recursive];
   } catch (e) {
     console.log(e);
