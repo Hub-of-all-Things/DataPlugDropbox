@@ -130,9 +130,11 @@ router.post('/dropbox/services', function (req, res, next) {
     console.log('Folder list successfully saved.');
   });
 
-  req.session.dataSource.dataSourceModel = dboxCondig['files'];
+  req.session.dataSource.dataSourceModel = dboxConfig['files'];
 
   services.findModelOrCreate(req.session.dataSource, function (err, dataSource) {
+
+    if (err) return res.send('Failed to create data source model');
 
     dataSource.lastUpdated = '1';
 

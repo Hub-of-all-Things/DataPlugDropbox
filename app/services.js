@@ -5,6 +5,7 @@ var fbReqGen = require('./config/fbFields');
 var hat = require('./hatRestApi');
 var models = require('./models');
 var config = require('./config');
+var helpers = require('./helpers');
 var _ = require('lodash');
 
 var internals = {};
@@ -70,8 +71,12 @@ exports.addUpdateJob = function (name, source, hatAccessToken, frequency) {
 
 exports.syncModelData = function (dataSource, folderList, callback) {
 
-  async.eachSeries(folderList, async.apply(internals.syncSingleModelData, dataSource), function done(err, dataSource) {
+  async.eachSeries(folderList, async.apply(internals.syncSingleModelData, dataSource), function done(err) {
     if (err) return callback(err);
+
+    dataSource.lastUpdated = new Date();
+
+    console.log(dataSource);
 
     helpers.updateDataSource(dataSource, function (err, savedDataSource) {
       if (err) return callback(err);
@@ -81,10 +86,19 @@ exports.syncModelData = function (dataSource, folderList, callback) {
   });
 };
 
-internals.syncSingleModelData = async.compose(
-  hat.createRecords,
-  internals.asyncify(hat.transformObjectToHat),
-  internals.getDboxFolderContent;
+internals.syncSingleModelData = function (dataSource, folder, callback) {
+  internals.getDboxFolderContent(dataSource, folder, function (err, dataSourceWithData) {
+    if (err) return callback(err);
+
+    dataSourceWithData = hat.transformObjectToHat(dataSourceWithData);
+
+    hat.createRecords(dataSourceWithData, function (err, cleanDataSource) {
+      if (err) return callback(err);
+
+      return callback(null, cleanDataSource);
+    });
+  });
+};
 
 internals.getDboxFolderContent = function (dataSource, folder, callback) {
   var requestOptions = {
@@ -126,6 +140,8 @@ exports.findModelOrCreate = function (dataSource, callback) {
   ];
 
   async.waterfall(procedure, function (err, dataSourceWithRawModel) {
+
+    if (err && err.code === 'ECONNREFUSED') return callback(err);
 
     if (err) {
 
