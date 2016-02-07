@@ -150,8 +150,9 @@ router.post('/dropbox/services', function (req, res, next) {
   });
 });
 
-router.get('/dropbox/webhook/verify', function (req, res, next) {
-  res.send({ challenge: req.query.challenge });
+// Allows Dropbox to verify our webhook
+router.get('/dropbox/webhook', function (req, res, next) {
+  res.send(req.query.challenge);
 });
 
 module.exports = router;
