@@ -185,6 +185,25 @@ exports.exchangeCodeForToken = function (code, callback) {
   });
 };
 
+exports.getUserAccountId = function (accessToken, callback) {
+  var requestOptions = {
+    url: 'https://api.dropboxapi.com/2/users/get_current_account',
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer ' + accessToken,
+      'Content-Type': 'application/json'
+    },
+    body: null,
+    json: true
+  };
+
+  request(requestOptions, function (err, response, body) {
+    if (err) return callback(err);
+
+    return callback(null, body.account_id);
+  });
+};
+
 exports.getAllDboxFolder = function (accessToken, callback) {
   var requestOptions = {
     url: 'https://api.dropboxapi.com/2/files/list_folder',

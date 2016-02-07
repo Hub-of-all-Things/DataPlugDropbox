@@ -69,16 +69,24 @@ router.get('/dropbox/authenticate', function (req, res, next) {
 });
 
 router.get('/dropbox/sync', function (req, res, next) {
-  services.getAllDboxFolder(req.session.dataSource.sourceAccessToken, function (err, folderList) {
-    if (err) return res.render('error',
-      { status: 500,
-        message: 'Dropbox API cannot be contacted at this moment.'});
+  services.getUserAccountId(req.session.dataSource.sourceAccessToken, function (err, accountId) {
+    if (err) return res.render('error', { message: 'Dropbox API cannot be contacted at this moment.' });
 
-    return res.render('services', {
-      title: 'HAT Dropbox Data Plug',
-      stepInformation: 'Step 2 - Schedule record synchronisation',
-      hatServicesLink: config.webServerURL + '/services',
-      folderList: folderList });
+    req.session.dboxAccount.accountId = accountId;
+
+    console.log(12123141, req.session.dboxAccount);
+
+    services.getAllDboxFolder(req.session.dataSource.sourceAccessToken, function (err, folderList) {
+      if (err) return res.render('error',
+        { status: 500,
+          message: 'Dropbox API cannot be contacted at this moment.'});
+
+      return res.render('services', {
+        title: 'HAT Dropbox Data Plug',
+        stepInformation: 'Step 2 - Schedule record synchronisation',
+        hatServicesLink: config.webServerURL + '/services',
+        folderList: folderList });
+    });
   });
 });
 
