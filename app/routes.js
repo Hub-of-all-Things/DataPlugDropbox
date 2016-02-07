@@ -104,33 +104,31 @@ router.post('/dropbox/services', function (req, res, next) {
   var formattedFolderList = helpers.formatFolderList(folderList, recursive);
 
   req.session.dboxAccount.folderList = formattedFolderList;
+  req.session.dataSource.dataSourceModel = dboxConfig['files'];
 
-  helpers.updateDboxAccount(req.session.dboxAccount, function (err, savedDboxAccount) {
+  services.findModelOrCreate(req.session.dataSource, function (err, dataSource) {
+
     if (err) return res.render('error',
       { status: 500,
-        message: 'Failed to save selected folders. Please try again' });
+        message: 'Failed to create data source model' });
 
-    req.session.dataSource.dataSourceModel = dboxConfig['files'];
+    dataSource.lastUpdated = '1';
 
-    services.findModelOrCreate(req.session.dataSource, function (err, dataSource) {
+    helpers.updateDataSource(dataSource, function (err, savedDataSource) {
 
       if (err) return res.render('error',
         { status: 500,
-          message: 'Failed to create data source model' });
+          message: 'Could not save data source information' });
 
-      dataSource.lastUpdated = '1';
-
-      helpers.updateDataSource(dataSource, function (err, savedDataSource) {
-
+      services.syncModelData(savedDataSource, req.session.dboxAccount, function (err, updatedSavedDataSource) {
         if (err) return res.render('error',
           { status: 500,
-            message: 'Could not save data source information' });
+            message: 'There has been and error during update process. Please try again.' });
 
-        services.syncModelData(savedDataSource, savedDboxAccount, function (err, updatedSavedDataSource) {
-
+        helpers.updateDboxAccount(req.session.dboxAccount, function (err, savedDboxAccount) {
           if (err) return res.render('error',
             { status: 500,
-              message: 'There has been and error during update process. Please try again.' });
+              message: 'Failed to save selected folders. Please try again' });
 
           return res.send('Hoorey, sync completed!');
         });

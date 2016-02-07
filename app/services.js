@@ -119,6 +119,7 @@ internals.getDboxFolderContent = function (dataSource, folder, callback) {
   request(requestOptions, function (err, response, body) {
     if (err) return callback(err);
 
+    folder.cursor = body.cursor;
     var filesOnlyArray = _.filter(body.entries, { '.tag': 'file'} );
     dataSource.data = filesOnlyArray;
 
