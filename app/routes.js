@@ -10,7 +10,6 @@ var config = require('./config');
 var helpers = require('./helpers');
 
 router.get('/dropbox', function (req, res, next) {
-
   // TODO: implement method to validate access token for given url
   if (req.query.hatAccessToken && req.query.hatUrl) {
 
@@ -149,6 +148,10 @@ router.post('/dropbox/services', function (req, res, next) {
       });
     });
   });
+});
+
+router.get('/dropbox/webhook/verify', function (req, res, next) {
+  res.send({ challenge: req.query.challenge });
 });
 
 module.exports = router;
