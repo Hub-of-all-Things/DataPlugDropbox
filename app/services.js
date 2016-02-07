@@ -69,9 +69,9 @@ exports.addUpdateJob = function (name, source, hatAccessToken, frequency) {
   agenda.start();
 };
 
-exports.syncModelData = function (dataSource, folderList, callback) {
+exports.syncModelData = function (dataSource, dboxAccount, callback) {
 
-  async.eachSeries(folderList, async.apply(internals.syncSingleModelData, dataSource), function done(err) {
+  async.eachSeries(dboxAccount.folderList, async.apply(internals.syncSingleModelData, dataSource), function done(err) {
     if (err) return callback(err);
 
     dataSource.lastUpdated = new Date();
@@ -162,4 +162,49 @@ exports.findModelOrCreate = function (dataSource, callback) {
 
   });
 
+};
+
+exports.exchangeCodeForToken = function (code, callback) {
+  var tokenRequestOptions = {
+    url: 'https://api.dropboxapi.com/1/oauth2/token',
+    form: {
+      code: code,
+      grant_type: 'authorization_code',
+      client_id: config.dbox.appKey,
+      client_secret: config.dbox.appSecret,
+      redirect_uri: config.webServerURL + '/dropbox/authenticate'
+    }
+  };
+
+  request.post(tokenRequestOptions, function (err, response, body) {
+    if (err) return callback(err);
+
+    var accessToken = JSON.parse(body).access_token;
+
+    return callback(null, accessToken);
+  });
+};
+
+exports.getAllDboxFolder = function (accessToken, callback) {
+  var requestOptions = {
+    url: 'https://api.dropboxapi.com/2/files/list_folder',
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer ' + accessToken,
+      'Content-Type': 'application/json'
+    },
+    body: {
+      path: '',
+      recursive: false
+    },
+    json: true
+  };
+
+  request(requestOptions, function (err, response, body) {
+    if (err) return callback(err);
+
+    var folderList = _.filter(body.entries, { '.tag': 'folder'} );
+
+    return callback(null, folderList);
+  });
 };

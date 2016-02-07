@@ -16,11 +16,13 @@ var HatDataSourceSchema = new Schema({
 
 var FolderSchema = new Schema({
     folderName: { type: String, required: true },
-    recursive: { type: Boolean, default: false }
+    recursive: { type: Boolean, default: false },
+    cursor: { type: String }
 });
 
 var SubscribedFoldersSchema = new Schema({
-  source: { type: Schema.Types.ObjectId, ref: 'HatDataSource' },
+  dataSource: { type: Schema.Types.ObjectId, ref: 'HatDataSource' },
+  accountId: String,
   folderList: [FolderSchema]
 });
 
