@@ -15,9 +15,9 @@ var HatDataSourceSchema = new Schema({
 });
 
 var FolderSchema = new Schema({
-    folderName: { type: String, required: true },
-    recursive: { type: Boolean, default: false },
-    cursor: { type: String }
+  folderName: { type: String, required: true },
+  recursive: { type: Boolean, default: false },
+  cursor: { type: String }
 });
 
 var SubscribedFoldersSchema = new Schema({

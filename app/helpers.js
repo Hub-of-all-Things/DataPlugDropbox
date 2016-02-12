@@ -47,6 +47,15 @@ exports.updateDboxAccount = function (dboxAccount, callback) {
   });
 };
 
+exports.getDboxAccountById = function (accountId, callback) {
+  DboxAccount.findOne({ accountId: accountId })
+    .populate('dataSource')
+    .exec(function (err, dboxAccount) {
+      if (err) return callback(err);
+      return callback(null, dboxAccount);
+    });
+};
+
 exports.validateUserInput = function (input) {
     if (!input) return [];
     if (typeof input === 'string') return [input];

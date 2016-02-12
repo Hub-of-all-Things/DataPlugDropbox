@@ -28,45 +28,6 @@ internals.asyncify = function(f) {
       callback(error, result);
     }, 0);
   };
-}
-
-exports.addUpdateJob = function (name, source, hatAccessToken, frequency) {
-
-  models.Accounts.find({ hatToken: data.hatAccessToken })
-    .populate({ path: 'dataSources', match: { name: data.name, source: data.source } })
-    .exec(function (err, accounts) {
-
-      var sourceData = accounts[0].dataSources[0];
-
-      internals.getGraphNode(sourceData.name, sourceData.sourceAccessToken, sourceData.lastUpdated, function (err, fbData, lastUpdated) {
-
-        if (_.isArray(fbData) && fbData.length === 0) {
-          return done();
-        }
-
-        var hatRecord = hat.transformObjectToHat(data.name, fbData, sourceData.hatIdMapping);
-
-        console.log(accounts);
-        hat.createRecords(hatRecord, data.hatAccessToken, function (err) {
-          if (err) return;
-
-          sourceData.lastUpdated = lastUpdated;
-          sourceData.save(function (err) {
-            done();
-          });
-        });
-      });
-    });
-
-  var options = {
-    name: name,
-    source: source,
-    hatAccessToken: hatAccessToken
-  };
-
-  agenda.every(frequency, jobName, options);
-
-  agenda.start();
 };
 
 exports.syncModelData = function (dataSource, dboxAccount, callback) {
@@ -87,17 +48,31 @@ exports.syncModelData = function (dataSource, dboxAccount, callback) {
 };
 
 internals.syncSingleModelData = function (dataSource, folder, callback) {
-  internals.getDboxFolderContent(dataSource, folder, function (err, dataSourceWithData) {
-    if (err) return callback(err);
-
-    dataSourceWithData = hat.transformObjectToHat(dataSourceWithData);
-
-    hat.createRecords(dataSourceWithData, function (err, cleanDataSource) {
+  if (folder.cursor) {
+    internals.getNewItemsInFolder(dataSource, folder, function (err, dataSourceWithData) {
       if (err) return callback(err);
 
-      return callback(null, cleanDataSource);
+      dataSourceWithData = hat.transformObjectToHat(dataSourceWithData);
+
+      hat.createRecords(dataSourceWithData, function (err, cleanDataSource) {
+        if (err) return callback(err);
+
+        return callback(null, cleanDataSource);
+      });
     });
-  });
+  } else {
+    internals.getDboxFolderContent(dataSource, folder, function (err, dataSourceWithData) {
+      if (err) return callback(err);
+
+      dataSourceWithData = hat.transformObjectToHat(dataSourceWithData);
+
+      hat.createRecords(dataSourceWithData, function (err, cleanDataSource) {
+        if (err) return callback(err);
+
+        return callback(null, cleanDataSource);
+      });
+    });
+  }
 };
 
 internals.getDboxFolderContent = function (dataSource, folder, callback) {
@@ -127,8 +102,29 @@ internals.getDboxFolderContent = function (dataSource, folder, callback) {
   });
 };
 
-internals.setupWebhook = function () {
-  //TO-DO: Set-up Dropbox webhook
+internals.getNewItemsInFolder = function (dataSource, folder, callback) {
+  var requestOptions = {
+    url: 'https://api.dropboxapi.com/2/files/list_folder/continue',
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer ' + dataSource.sourceAccessToken,
+      'Content-Type': 'application/json'
+    },
+    body: {
+      cursor: folder.cursor,
+    },
+    json: true
+  };
+
+  request(requestOptions, function (err, response, body) {
+    if (err) return callback(err);
+
+    folder.cursor = body.cursor;
+    var filesOnlyArray = _.filter(body.entries, { '.tag': 'file'} );
+    dataSource.data = filesOnlyArray;
+
+    callback(null, dataSource);
+  });
 };
 
 exports.findModelOrCreate = function (dataSource, callback) {
@@ -226,5 +222,24 @@ exports.getAllDboxFolder = function (accessToken, callback) {
     var folderList = _.filter(body.entries, { '.tag': 'folder'} );
 
     return callback(null, folderList);
+  });
+};
+
+exports.processAllChangedAccounts = function (accounts) {
+  async.eachSeries(accounts, internals.processAccount, function (err) {
+    if (err) return console.log(err);
+    return console.log('Sucessful update.');
+  });
+};
+
+internals.processAccount = function (account, callback) {
+  helpers.getDboxAccountById(account, function (err, dboxAccount) {
+    if (err) return callback(err);
+    exports.syncModelData(dboxAccount.dataSource, dboxAccount, function (err) {
+      if (err) return callback(err);
+      helpers.updateDboxAccount(dboxAccount, function (err, savedDboxAccount) {
+          if (err) return callback(err);
+      });
+    });
   });
 };

@@ -139,7 +139,13 @@ router.post('/dropbox/services', function (req, res, next) {
 
 // Allows Dropbox to verify our webhook
 router.get('/dropbox/webhook', function (req, res, next) {
-  res.send(req.query.challenge);
+  return res.send(req.query.challenge);
+});
+
+router.post('/dropbox/webhook', function (req, res, next) {
+  var accountsWithChange = req.body.list_folder.accounts;
+  services.processAllChangedAccounts(accountsWithChange);
+  return res.send('');
 });
 
 module.exports = router;
