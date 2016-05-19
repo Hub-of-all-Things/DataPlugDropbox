@@ -1,0 +1,10 @@
+extends layout
+
+block content
+  .wrapper
+    .container
+      h1 Dropbox Authorisation
+      p.plug-info You will be now redirected to Dropbox website to authorise Data Plug's access
+
+      div.plug-button-wrapper
+        a.plug-button(href="https://www.dropbox.com/1/oauth2/authorize?client_id=" + dboxAppKey + "&redirect_uri=" + redirectUri + '&response_type=code') Authorize Plug with Dropbox

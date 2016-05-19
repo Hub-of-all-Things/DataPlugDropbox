@@ -20,6 +20,17 @@ config.dbox = {
   appSecret: process.env.DROPBOX_APP_SECRET
 };
 
+config.market = {
+  host: 'marketsquare.hubofallthings.net',
+  id: process.env.MARKET_ID,
+  accessToken: process.env.MARKET_ACCESS_TOKEN
+};
+
+config.hat = {
+  username: process.env.HAT_USER,
+  password: process.env.HAT_PASSWORD
+};
+
 if (TEST) config.webServer.port = 5525;
 
 config.webServerURL = 'http://' + config.webServer.host + ':' + config.webServer.port;
