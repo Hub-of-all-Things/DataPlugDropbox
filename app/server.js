@@ -6,9 +6,10 @@ var session = require('express-session');
 var bodyParser = require('body-parser');
 var mongoose = require('mongoose');
 
+const indexRoutes = require('./routes/index');
+
 var errors = require('./errors');
 var config = require('./config');
-var routes = require('./routes');
 
 var app = express();
 
@@ -28,7 +29,7 @@ app.use(session({
 }));
 app.use(express.static(path.join(__dirname, '../public')));
 
-app.use('/', routes);
+app.use('/', indexRoutes);
 
 // mongoose
 
