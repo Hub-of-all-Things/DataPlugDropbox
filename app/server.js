@@ -7,6 +7,7 @@ var bodyParser = require('body-parser');
 var mongoose = require('mongoose');
 
 const indexRoutes = require('./routes/index');
+const dataPlugRoutes = require('./routes/dataPlug');
 
 var errors = require('./errors');
 var config = require('./config');
@@ -30,6 +31,7 @@ app.use(session({
 app.use(express.static(path.join(__dirname, '../public')));
 
 app.use('/', indexRoutes);
+app.use('/dataplug', dataPlugRoutes);
 
 // mongoose
 
