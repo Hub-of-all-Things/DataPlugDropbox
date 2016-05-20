@@ -12,12 +12,23 @@ config.webServer = {
 config.mongodb = {
   port: process.env.MONGODB_PORT || 27017,
   host: process.env.MONGODB_HOST || 'localhost',
-  db: 'hat_sync'
+  db: 'data_plug_dropbox'
 };
 
 config.dbox = {
   appKey: process.env.DROPBOX_APP_KEY,
   appSecret: process.env.DROPBOX_APP_SECRET
+};
+
+config.market = {
+  host: 'marketsquare.hubofallthings.net',
+  id: process.env.MARKET_ID,
+  accessToken: process.env.MARKET_ACCESS_TOKEN
+};
+
+config.hat = {
+  username: process.env.HAT_USER,
+  password: process.env.HAT_PASSWORD
 };
 
 if (TEST) config.webServer.port = 5525;
@@ -26,6 +37,9 @@ config.webServerURL = 'http://' + config.webServer.host + ':' + config.webServer
 
 config.dbURL = 'mongodb://' + config.mongodb.host + ':' + config.mongodb.port +
 '/' + config.mongodb.db + '_' + config.currentEnv;
+
+config.market.url = 'http://' + config.market.host + '/api/dataplugs/' + config.market.id +
+'/connect';
 
 module.exports = config;
 

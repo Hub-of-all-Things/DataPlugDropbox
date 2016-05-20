@@ -1,6 +1,6 @@
 var hatDataSourceConfig = {
-  files: {
-    name: "files",
+  photos: {
+    name: "photos",
     source: "dropbox",
     fields: [
       { name: "tag" },

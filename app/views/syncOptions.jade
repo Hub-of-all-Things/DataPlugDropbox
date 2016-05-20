@@ -1,0 +1,24 @@
+extends layout
+
+block content
+  .wrapper
+    .container
+      h1 Dropbox Photo synchronisation options
+      p.plug-info Please select folders to be synchronised
+      p.plug-info Available folders:
+      form(action="/dataplug/options", method="post")
+        ul.folderList#folderList
+          li.tablerow
+            span.tablecell Sync?
+            span.tablecell Check subfolder?
+            span.tablecell Folder name
+
+          - each item in folderList
+            li.tablerow
+              span.tablecell
+                input(type="checkbox", name="folderList", value=item.path_lower)
+              span.tablecell
+                input(type="checkbox", name="recursive", value=item.path_lower)
+              span.tablecell= item.path_lower
+        div.actions
+          button.plug-button(type="submit") Add Selected Folders

@@ -1,9 +1,18 @@
 extends layout
 
 block content
-  h1= title
-  p= stepInformation
+  .wrapper
+    .container
+      h1 HAT Data Plug for Dropbox Photos
+      p.plug-info A supplementary HAT tool to allow synchronisation of Dropbox photos with your personal HAT. Give it a try and see your photos appear in your HAT.
+      p.plug-info
+        span There is just few simple steps to get us going:
+        ol
+          li Authorise the plug to access your Dropbox files
+          li Select the folders for synchronization
+          li See your photos appear in the HAT
 
-  a(href="https://www.dropbox.com/1/oauth2/authorize?client_id=" + dropboxAppKey + "&redirect_uri=" + redirectUri + '&response_type=code') Sync with Dropbox
-  br
-  hr
+      div.plug-button-wrapper
+        a.plug-button(href="/dataplug") Start Here
+      div.plug-button-wrapper
+        a.plug-button(href="/dataplug/details") Learn more about your data
