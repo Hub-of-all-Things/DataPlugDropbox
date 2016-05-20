@@ -66,3 +66,13 @@ exports.createDboxAccount = (dataSourceId, accountId, subscribedFolders, callbac
 
   return DboxAccount.create(newDbEntry, callback);
 };
+
+exports.updateDataSource = (docUpdate, dataSource, callback) => {
+  const dataSourceFindParams = {
+    hatHost: dataSource.hatHost,
+    name: dataSource.name,
+    source: dataSource.source
+  };
+
+  return HatDataSource.findOneAndUpdate(dataSourceFindParams, docUpdate, { new: true }, callback);
+};

@@ -68,3 +68,33 @@ exports.getAllFolders = (accessToken, callback) => {
   });
 };
 
+exports.getFolderContent = (accessToken, folder, callback) => {
+  var requestOptions = {
+    url: 'https://api.dropboxapi.com/2/files/list_folder',
+    headers: {
+      'Authorization': 'Bearer ' + accessToken,
+      'Content-Type': 'application/json'
+    },
+    body: {
+      path: folder.folderName,
+      recursive: folder.recursive,
+      include_media_info: true
+    },
+    json: true
+  };
+
+  if (folder.cursor) {
+    requestOptions.url += '/continue';
+    requestOptions.body = { cursor: folder.cursor },
+  }
+
+  request.post(requestOptions, (err, response, body) => {
+    if (err) return callback(err);
+
+    folder.cursor = body.cursor;
+    const filesOnlyArray = _.filter(body.entries, { '.tag': 'file'} );
+
+    callback(null, filesOnlyArray);
+  });
+};
+
