@@ -8,6 +8,7 @@ var mongoose = require('mongoose');
 
 const indexRoutes = require('./routes/index');
 const dataPlugRoutes = require('./routes/dataPlug');
+const callbackRoutes = require('./routes/callback');
 
 var errors = require('./errors');
 var config = require('./config');
@@ -32,6 +33,7 @@ app.use(express.static(path.join(__dirname, '../public')));
 
 app.use('/', indexRoutes);
 app.use('/dataplug', dataPlugRoutes);
+app.use('/dropbox', callbackRoutes);
 
 // mongoose
 

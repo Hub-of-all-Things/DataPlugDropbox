@@ -12,7 +12,7 @@ config.webServer = {
 config.mongodb = {
   port: process.env.MONGODB_PORT || 27017,
   host: process.env.MONGODB_HOST || 'localhost',
-  db: 'hat_sync'
+  db: 'data_plug_dropbox'
 };
 
 config.dbox = {
@@ -37,6 +37,9 @@ config.webServerURL = 'http://' + config.webServer.host + ':' + config.webServer
 
 config.dbURL = 'mongodb://' + config.mongodb.host + ':' + config.mongodb.port +
 '/' + config.mongodb.db + '_' + config.currentEnv;
+
+config.market.url = 'http://' + config.market.host + '/api/dataplugs/' + config.market.id +
+'/connect';
 
 module.exports = config;
 

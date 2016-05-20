@@ -2,6 +2,8 @@
 
 const express = require('express');
 const router = express.Router();
+
+const config = require('../config');
 const errors = require('../errors');
 
 const db = require('../services/db.service');
@@ -43,5 +45,9 @@ router.post('/hat', (req, res, next) => {
   });
 
 }, errors.renderErrorPage);
+
+router.get('/options', (req, res, next) => {
+  res.send('SUCCESS');
+});
 
 module.exports = router;
