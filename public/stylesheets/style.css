@@ -39,10 +39,9 @@ body :-ms-input-placeholder {
 .wrapper {
   background: linear-gradient(#b62c4c, #c64237);
   position: absolute;
-  top: 15%;
+  top: 5%;
   left: 10%;
   width: 80%;
-  height: 70%;
   overflow: hidden;
   border-radius: 3px;
 }
@@ -104,7 +103,7 @@ body :-ms-input-placeholder {
 }
 
 .container .actions {
-  margin: auto;
+  margin: 3% auto;
   width: 30%;
 }
 
@@ -130,6 +129,7 @@ body :-ms-input-placeholder {
 }
 
 .folderList {
+  margin: auto;
   display: table;
 }
 

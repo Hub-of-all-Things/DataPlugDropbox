@@ -2,6 +2,7 @@
 
 const request = require('request');
 const qs = require('qs');
+const _ = require('lodash');
 
 const config = require('../config');
 
@@ -25,3 +26,45 @@ exports.exchangeCodeForToken = (code, callback) => {
     return callback(null, accessToken);
   });
 };
+
+exports.getAccountId = (accessToken, callback) => {
+  var requestOptions = {
+    url: 'https://api.dropboxapi.com/2/users/get_current_account',
+    headers: {
+      'Authorization': 'Bearer ' + accessToken,
+      'Content-Type': 'application/json'
+    },
+    body: null,
+    json: true
+  };
+
+  request.post(requestOptions, function (err, response, body) {
+    if (err) return callback(err);
+
+    return callback(null, body.account_id);
+  });
+};
+
+exports.getAllFolders = (accessToken, callback) => {
+  var requestOptions = {
+    url: 'https://api.dropboxapi.com/2/files/list_folder',
+    headers: {
+      'Authorization': 'Bearer ' + accessToken,
+      'Content-Type': 'application/json'
+    },
+    body: {
+      path: '',
+      recursive: false
+    },
+    json: true
+  };
+
+  request.post(requestOptions, function (err, response, body) {
+    if (err) return callback(err);
+
+    var folderList = _.filter(body.entries, { '.tag': 'folder'} );
+
+    return callback(null, folderList);
+  });
+};
+

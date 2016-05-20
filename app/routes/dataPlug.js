@@ -8,6 +8,7 @@ const errors = require('../errors');
 
 const db = require('../services/db.service');
 const hat = require('../services/hat.service');
+const dbox = require('../services/dbox.service');
 const market = require('../services/market.service');
 
 router.get('/', (req, res, next) => {
@@ -47,7 +48,17 @@ router.post('/hat', (req, res, next) => {
 }, errors.renderErrorPage);
 
 router.get('/options', (req, res, next) => {
-  res.send('SUCCESS');
-});
+  dbox.getAccountId(req.session.sourceAccessToken, (err, accountId) => {
+    if (err) return next();
+
+    req.session.dboxAccountId = accountId;
+
+    dbox.getAllFolders(req.session.sourceAccessToken, (err, folderList) => {
+      if (err) return next();
+
+      return res.render('syncOptions', { folderList: folderList });
+    });
+  });
+}, errors.renderErrorPage);
 
 module.exports = router;
