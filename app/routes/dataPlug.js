@@ -10,6 +10,7 @@ const db = require('../services/db.service');
 const hat = require('../services/hat.service');
 const dbox = require('../services/dbox.service');
 const market = require('../services/market.service');
+const helpers = require('../helpers');
 
 router.get('/', (req, res, next) => {
   return res.render('dataPlugLanding', { hatHost: req.query.hat });
@@ -59,6 +60,38 @@ router.get('/options', (req, res, next) => {
       return res.render('syncOptions', { folderList: folderList });
     });
   });
+}, errors.renderErrorPage);
+
+router.post('/options', (req, res, next) => {
+  const folderList = req.body['folderList'];
+  const isRecursive = req.body['recursive'];
+
+  if (!folderList) return res.redirect('/dataplug/options');
+
+  const formattedFolderList = helpers.tranformFolderList(folderList, isRecursive);
+
+  db.createDataSources('photos',
+                       'dropbox',
+                       req.session.hatUrl,
+                       req.session.hatAccessToken,
+                       req.session.sourceAccessToken,
+                       (err, savedEntries) => {
+    if (err) return next();
+
+    db.createUpdateJobs(savedEntries, (err, savedJobs) => {
+      if (err) return next();
+
+      db.createDboxAccount(savedEntries[0]._id,
+                           req.session.dboxAccountId,
+                           formattedFolderList,
+                           (err, savedDboxAcc) => {
+        if (err) return next();
+
+        return res.render('confirmation');
+      });
+    });
+  });
+
 }, errors.renderErrorPage);
 
 module.exports = router;
