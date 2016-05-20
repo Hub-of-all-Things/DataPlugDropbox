@@ -8,6 +8,8 @@ const config = require('../config');
 const db = require('../services/db.service');
 const dbox = require('../services/dbox.service');
 
+let internals = {};
+
 exports.getAccessToken = (hatHost, callback) => {
   const reqOptions = {
     url: 'http://' + hatHost + '/users/access_token',

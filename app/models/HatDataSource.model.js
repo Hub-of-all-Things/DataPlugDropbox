@@ -1,7 +1,9 @@
-var mongoose = require('mongoose');
-var Schema = mongoose.Schema;
+'use strict';
 
-var HatDataSourceSchema = new Schema({
+const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
+
+const HatDataSourceSchema = new Schema({
   hatHost:            { type: String, required: true },
   hatAccessToken:     { type: String, required: true },
   name:               { type: String, required: true },

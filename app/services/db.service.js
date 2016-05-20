@@ -1,8 +1,7 @@
 'use strict';
 
 const HatDataSource = require('../models/HatDataSource.model');
-const UpdateJob = require('../models/UpdateJob.model');
-const DboxAccount = require('../models/DboxAccount.model');
+const DboxFolder = require('../models/DboxFolder.model');
 const config = require('../config');
 const dboxHatModels = require('../config/dboxHatModels');
 
@@ -34,18 +33,20 @@ exports.createDataSources = (names, source, hatHost, hatAT, sourceAT, callback) 
   return HatDataSource.create(newDbEntries, callback);
 };
 
-exports.createUpdateJobs = (dataSources, callback) => {
-  if (typeof dataSources === 'string') dataSources = [dataSources];
+exports.createDboxFolder = (dataSourceId, accountId, subscribedFolders, callback) => {
+
+  if (typeof subscribedFolders === 'string') subscribedFolders = [subscribedFolders];
 
   const currentTime = new Date();
 
-  const newDbEntries = dataSources.map((dataSource) => {
+  const newDbEntries = subscribedFolders.map((folder) => {
     return {
-      dataSource: dataSource._id,
-      priority: 0,
-      repeatInterval: null,
+      dataSource: dataSourceId,
+      accountId: accountId,
+      folderName: folder.folderName,
+      recursive: folder.recursive,
+      cursor: folder.cursor,
       createdAt: currentTime,
-      lastModifiedAt: currentTime,
       lastRunAt: null,
       nextRunAt: new Date(currentTime.getTime() + 60 * 1000),
       lastSuccessAt: null,
@@ -54,17 +55,7 @@ exports.createUpdateJobs = (dataSources, callback) => {
     };
   });
 
-  return UpdateJob.create(newDbEntries, callback);
-};
-
-exports.createDboxAccount = (dataSourceId, accountId, subscribedFolders, callback) => {
-  const newDbEntry = {
-    dataSource: dataSourceId,
-    accountId: accountId,
-    subscribedFolders: subscribedFolders
-  };
-
-  return DboxAccount.create(newDbEntry, callback);
+  return DboxAccount.create(newDbEntries, callback);
 };
 
 exports.updateDataSource = (docUpdate, dataSource, callback) => {

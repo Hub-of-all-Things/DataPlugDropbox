@@ -85,7 +85,7 @@ exports.getFolderContent = (accessToken, folder, callback) => {
 
   if (folder.cursor) {
     requestOptions.url += '/continue';
-    requestOptions.body = { cursor: folder.cursor },
+    requestOptions.body = { cursor: folder.cursor };
   }
 
   request.post(requestOptions, (err, response, body) => {

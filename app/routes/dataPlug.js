@@ -78,20 +78,15 @@ router.post('/options', (req, res, next) => {
                        (err, savedEntries) => {
     if (err) return next();
 
-    db.createUpdateJobs(savedEntries, (err, savedJobs) => {
+    db.createDboxFolder(savedEntries[0]._id,
+                         req.session.dboxAccountId,
+                         formattedFolderList,
+                         (err, savedDboxAcc) => {
       if (err) return next();
 
-      db.createDboxAccount(savedEntries[0]._id,
-                           req.session.dboxAccountId,
-                           formattedFolderList,
-                           (err, savedDboxAcc) => {
-        if (err) return next();
-
-        return res.render('confirmation');
-      });
+      return res.render('confirmation');
     });
   });
-
 }, errors.renderErrorPage);
 
 module.exports = router;
