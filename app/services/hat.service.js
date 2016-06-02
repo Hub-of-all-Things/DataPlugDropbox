@@ -71,9 +71,10 @@ exports.mapOrCreateModel = (dataSource, callback) => {
     });
   } else if (!dataSource.hatIdMapping) {
     client.getDataSourceModel(dataSource.dataSourceModelId, (err, model) => {
+      let hatIdMapping;
 
       try {
-        const hatIdMapping = hat.transform.mapDataSourceModelIds(model);
+        hatIdMapping = hat.transform.mapDataSourceModelIds(model);
       } catch (e) {
         return callback(err);
       }

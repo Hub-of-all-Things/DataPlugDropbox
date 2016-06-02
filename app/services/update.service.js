@@ -1,9 +1,14 @@
+'use strict';
+
 const async = require('async');
 const db = require('../services/db.service');
 const hat = require('../services/hat.service');
+const config = require('../config');
 
-var queue = async.queue(work, 1);
-var onQueueJobs = [];
+let queue = async.queue(work, 1);
+let onQueueJobs = [];
+
+let internals = {};
 
 function work(item, cb)  {
   db.lockJob(item.info._id, (err, savedJob) => {
@@ -15,31 +20,32 @@ function work(item, cb)  {
 
     if (item.task === 'UPDATE_RECORDS') {
       hat.updateDataSource(item.info.dataSource, (err) => {
-        if (err) {
-          return db.updateFailJob(item.info, (err) => {
-            onQueueJobs.shift();
-            cb();
-          });
-        } else {
-          return db.updateSuccessJob(item.info, (err) => {
-            onQueueJobs.shift();
-            cb();
-          });
-        }
+        const currentTime = new Date();
+
+        const isSuccess = err ? false : true;
+
+        const nextRunAt = err ? new Date(currentTime.getTime() + config.updateService.repeatInterval) : null;
+
+        db.updateDboxFolder(item.info, isSuccess, nextRunAt, (err) => {
+          onQueueJobs.shift();
+          cb();
+        });
+
       });
+
     } else if (item.task === 'CREATE_MODEL') {
       hat.mapOrCreateModel(item.info.dataSource, (err) => {
-        if (err) {
-          return db.updateFailJob(item.info, (err) => {
-            onQueueJobs.shift();
-            cb();
-          });
-        } else {
-          return db.updateSuccessJob(item.info, (err) => {
-            onQueueJobs.shift();
-            cb();
-          });
-        }
+        const currentTime = new Date();
+
+        const isSuccess = err ? false : true;
+
+        const nextRunAt = new Date(currentTime.getTime() + config.updateService.repeatInterval);
+
+        db.updateDboxFolder(item.info, isSuccess, nextRunAt, (err) => {
+          onQueueJobs.shift();
+          cb();
+        });
+
       });
     }
   });
@@ -64,18 +70,22 @@ setInterval(() => {
       };
     });
 
-    async.eachSeries(tasks, (task, callback) => {
-      console.log('Adding task to queue. Currently there are ' + queue.length() + ' tasks in the queue.');
-
-      queue.push(task, () => {
-        console.log('Task ' + task.task + ' has been completed.');
-      });
-
-      onQueueJobs.push(task.info._id);
-
-      callback();
-    }, () => {
-      console.log('All tasks submitted to queue.');
-    });
+    return internals.queueNewJobs(tasks);    
   });
-}, 5 * 60 * 1000);
+}, config.updateService.dbCheckInterval);
+
+internals.queueNewJobs = (jobs) => {
+  async.eachSeries(jobs, (job, callback) => {
+    console.log('Adding task to queue. Currently there are ' + queue.length() + ' tasks in the queue.');
+
+    queue.push(job, () => {
+      console.log('Task ' + job.task + ' has been completed.');
+    });
+
+    onQueueJobs.push(job.info._id);
+
+    callback();
+  }, () => {
+    console.log('All tasks submitted to queue.');
+  });
+};
