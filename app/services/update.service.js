@@ -70,11 +70,25 @@ setInterval(() => {
       };
     });
 
-    return internals.queueNewJobs(tasks);    
+    return internals.addNewJobs(tasks);    
   });
 }, config.updateService.dbCheckInterval);
 
-internals.queueNewJobs = (jobs) => {
+exports.addNewJobsByAccount = (account, callback) => {
+  db.getAllDboxFoldersByAccount(account, onQueueJobs, (err, results) => {
+      const tasks = results.map((result) => {
+        return {
+          task: "UPDATE_RECORDS",
+          info: result
+        };
+      });
+
+      return internals.addNewJobs(tasks, callback);
+
+    });
+};
+
+internals.addNewJobs = (jobs, cb) => {
   async.eachSeries(jobs, (job, callback) => {
     console.log('Adding task to queue. Currently there are ' + queue.length() + ' tasks in the queue.');
 
@@ -87,5 +101,7 @@ internals.queueNewJobs = (jobs) => {
     callback();
   }, () => {
     console.log('All tasks submitted to queue.');
+
+    if (typeof cb === 'function') cb();
   });
 };

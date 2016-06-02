@@ -15,8 +15,8 @@ exports.countDataSources = (hatUrl, callback) => {
 exports.findDueJobs = (onQueueJobs, callback) => {
   return DboxFolder.find({ nextRunAt: { $lt: new Date() },
                           _id: { $nin: onQueueJobs } })
-                  .populate('dataSource')
-                  .exec(callback);
+                   .populate('dataSource')
+                   .exec(callback);
 };
 
 exports.lockJob = (jobId, callback) => {
@@ -26,6 +26,13 @@ exports.lockJob = (jobId, callback) => {
   };
 
   return DboxFolder.findByIdAndUpdate(jobId, docUpdate, { new: true }, callback);
+};
+
+exports.getAllDboxFoldersByAccount = (accountId, onQueueJobs, callback) => {
+  return DboxFolder.find({ accountId: accountId,
+                          _id: { $nin: onQueueJobs } })
+                   .populate('dataSource')
+                   .exec(callback);
 };
 
 exports.createDataSources = (names, source, hatHost, hatAT, sourceAT, callback) => {
