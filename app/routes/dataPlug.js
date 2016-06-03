@@ -10,6 +10,7 @@ const db = require('../services/db.service');
 const hat = require('../services/hat.service');
 const dbox = require('../services/dbox.service');
 const market = require('../services/market.service');
+const update = require('../services/update.service');
 const helpers = require('../helpers');
 
 router.get('/', (req, res, next) => {
@@ -21,9 +22,9 @@ router.post('/hat', (req, res, next) => {
 
   req.session.hatUrl = req.body['hat_url'];
 
-  market.connectHat(req.session.hatUrl, (err) => {
+  //market.connectHat(req.session.hatUrl, (err) => {
 
-    if (err) return next();
+    //if (err) return next();
 
     hat.getAccessToken(req.session.hatUrl, (err, hatAccessToken) => {
 
@@ -44,7 +45,7 @@ router.post('/hat', (req, res, next) => {
         }
       });
     });
-  });
+  //});
 
 }, errors.renderErrorPage);
 
@@ -79,11 +80,12 @@ router.post('/options', (req, res, next) => {
     if (err) return next();
 
     db.createDboxFolder(savedEntries[0]._id,
-                         req.session.dboxAccountId,
-                         formattedFolderList,
-                         (err, savedDboxAcc) => {
+                        req.session.dboxAccountId,
+                        formattedFolderList,
+                        (err, savedDboxAcc) => {
       if (err) return next();
 
+      update.addInitJob(savedEntries[0]);
       return res.render('confirmation');
     });
   });
