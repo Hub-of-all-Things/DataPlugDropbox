@@ -6,6 +6,8 @@ const _ = require('lodash');
 
 const config = require('../config');
 
+let internals = {};
+
 exports.exchangeCodeForToken = (code, callback) => {
   const tokenRequestOptions = {
     url: 'https://api.dropboxapi.com/1/oauth2/token',
@@ -91,10 +93,38 @@ exports.getFolderContent = (accessToken, folder, callback) => {
   request.post(requestOptions, (err, response, body) => {
     if (err) return callback(err);
 
-    folder.cursor = body.cursor;
-    const filesOnlyArray = _.filter(body.entries, { '.tag': 'file'} );
+    if (body.entries && body.cursor) {
+      folder.cursor = body.cursor;
+      const photoArray = internals.filterByType(body.entries, 'photo');
+      const validPhotoArray = internals.modifyInvalidKeys(photoArray);
 
-    callback(null, filesOnlyArray);
+      return callback(null, validPhotoArray);
+    } else {
+      return callback(new Error('Invalid response from Dropbox'));
+    }
+
+
+  });
+};
+
+internals.filterByType = (array, type) => {
+  return array.filter((obj) => {
+    if (obj['media_info'] && obj['media_info']['metadata']
+      && obj['media_info']['metadata']['.tag'] === type) {
+      return true;
+    } else {
+      return false;
+    }
+  });
+};
+
+internals.modifyInvalidKeys = (array) => {
+  return array.map((obj) => {
+    const str = JSON.stringify(obj);
+    const cleanStr = str.replace(/"\.tag":/g, '"tag":');
+    const cleanObj = JSON.parse(cleanStr);
+
+    return cleanObj;
   });
 };
 

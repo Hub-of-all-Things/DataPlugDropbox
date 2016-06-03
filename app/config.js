@@ -35,8 +35,8 @@ config.hat = {
 };
 
 config.updateService = {
-  dbCheckInterval: 1 * 60 * 1000,
-  repeatInterval: 60 * 1000, 
+  dbCheckInterval: 10 * 60 * 1000,
+  repeatInterval: 60 * 1000
 };
 
 if (TEST) config.webServer.port = 5525;

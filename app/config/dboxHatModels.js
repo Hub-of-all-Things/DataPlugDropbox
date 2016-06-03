@@ -1,4 +1,4 @@
-var hatDataSourceConfig = {
+const hatDataSourceConfig = {
   photos: {
     name: "photos",
     source: "dropbox",
@@ -6,6 +6,7 @@ var hatDataSourceConfig = {
       { name: "tag" },
       { name: "name" },
       { name: "path_lower" },
+      { name: "path_display" },
       { name: "id" },
       { name: "client_modified" },
       { name: "server_modified" },
