@@ -64,9 +64,9 @@ exports.getAllFolders = (accessToken, callback) => {
   request.post(requestOptions, function (err, response, body) {
     if (err) return callback(err);
 
-    var folderList = _.filter(body.entries, { '.tag': 'folder'} );
+    const folderTree = internals.generateFolderTree(body);
 
-    return callback(null, folderList);
+    return callback(null, folderTree);
   });
 };
 
@@ -126,5 +126,45 @@ internals.modifyInvalidKeys = (array) => {
 
     return cleanObj;
   });
+};
+
+internals.generateFolderTree = (body) => {
+  let folderTree = [];
+
+  const folderEntries = body.entries.filter((entry) => {
+    return entry['.tag'] === 'folder';
+  });
+
+  const folderPaths = folderEntries.map((entry) => {
+    return entry['path_lower'].substr(1).split('/');
+  });
+
+  for (let i = 0, l = folderPaths.length; i < l; i++) {
+    internals.processPath(folderTree, folderPaths[i]);
+  }
+
+  return folderTree;
+};
+
+internals.processPath = (treeNode, path) => {
+  for (let i = 0, l = path.length; i < l; i++) {
+    const nodeName = path[0];
+    const rest = path.slice(1);
+
+    let node = null;
+    for (let j = 0, m = treeNode.length; j < m; j++) {
+      if (treeNode[j].text === nodeName) {
+        node = treeNode[j];
+        break;
+      }
+    }
+
+    if (node === null) {
+      node = { text: nodeName, nodes: [] };
+      treeNode.push(node);
+    }
+
+    if (rest.length > 0) internals.processPath(node.nodes, rest);
+  }
 };
 

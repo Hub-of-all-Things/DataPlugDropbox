@@ -55,10 +55,10 @@ router.get('/options', (req, res, next) => {
 
     req.session.dboxAccountId = accountId;
 
-    dbox.getAllFolders(req.session.sourceAccessToken, (err, folderList) => {
+    dbox.getAllFolders(req.session.sourceAccessToken, (err, folderTree) => {
       if (err) return next();
 
-      return res.render('syncOptions', { folderList: folderList });
+      return res.render('syncOptions', { folderTree: folderTree });
     });
   });
 }, errors.renderErrorPage);

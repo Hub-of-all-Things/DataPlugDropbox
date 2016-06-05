@@ -13,12 +13,6 @@ block content
             span.tablecell Check subfolder?
             span.tablecell Folder name
 
-          - each item in folderList
-            li.tablerow
-              span.tablecell
-                input(type="checkbox", name="folderList", value=item.path_lower)
-              span.tablecell
-                input(type="checkbox", name="recursive", value=item.path_lower)
-              span.tablecell= item.path_lower
+            span= folderTree
         div.actions
           button.plug-button(type="submit") Add Selected Folders
