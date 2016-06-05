@@ -6,13 +6,20 @@ block content
       h1 Dropbox Photo synchronisation options
       p.plug-info Please select folders to be synchronised
       p.plug-info Available folders:
+      #tree.treeview
       form(action="/dataplug/options", method="post")
-        ul.folderList#folderList
-          li.tablerow
-            span.tablecell Sync?
-            span.tablecell Check subfolder?
-            span.tablecell Folder name
-
-            span= folderTree
         div.actions
           button.plug-button(type="submit") Add Selected Folders
+
+  script.
+
+    $('#tree').treeview({
+      backColor: 'transparent',
+      onhoverColor: 'rgba(255, 255, 255, 0.2)',
+      levels: 1,
+      showIcon: false,
+      showBorder: false,
+      showCheckbox: true,
+      showTags: true,
+      data: !{JSON.stringify(folderTree)}
+    });

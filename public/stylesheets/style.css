@@ -128,15 +128,8 @@ body :-ms-input-placeholder {
   font-weight: bold;
 }
 
-.folderList {
+.treeview {
+  width: 50%;
   margin: auto;
-  display: table;
-}
-
-.tablerow {
-  display: table-row;
-}
-
-.tablecell {
-  display: table-cell;
+  text-align: left;
 }
