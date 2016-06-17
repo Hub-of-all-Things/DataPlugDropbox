@@ -67,7 +67,6 @@ exports.createDboxFolder = (dataSourceId, accountId, subscribedFolders, callback
       dataSource: dataSourceId,
       accountId: accountId,
       folderName: folder.folderName,
-      recursive: folder.recursive,
       cursor: folder.cursor,
       createdAt: currentTime,
       lastRunAt: null,

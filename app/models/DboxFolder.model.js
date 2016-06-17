@@ -7,7 +7,6 @@ const DboxFolderSchema = new Schema({
   dataSource:     { type: Schema.Types.ObjectId, ref: 'HatDataSource' },
   accountId:      { type: String },
   folderName:     { type: String, required: true },
-  recursive:      { type: Boolean, default: false },
   cursor:         { type: String },
   createdAt:      { type: Date },
   lastRunAt:      { type: Date },

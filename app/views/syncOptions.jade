@@ -7,11 +7,11 @@ block content
       p.plug-info Please select folders to be synchronised
       p.plug-info Available folders:
       #tree.treeview
-      form(action="/dataplug/options", method="post")
-        div.actions
-          button.plug-button(type="submit") Add Selected Folders
+      div.actions
+        button.plug-button#submit-folder-list(type="submit") Add Selected Folders
 
   script.
+    var foldersToSync = [];
 
     $('#tree').treeview({
       backColor: 'transparent',
@@ -21,5 +21,35 @@ block content
       showBorder: false,
       showCheckbox: true,
       showTags: true,
-      data: !{JSON.stringify(folderTree)}
+      data: !{JSON.stringify(folderTree)},
+
+      onNodeChecked: function(event, node) {
+        var nodeId = node.nodeId;
+        var path = '/' + node.text;
+        while (node.parentId !== undefined) {
+          node = $('#tree').treeview('getParent', node);
+          path = '/' + node.text + path;
+        }
+        foldersToSync[nodeId] = path;
+        console.log(foldersToSync);
+      },
+
+      onNodeUnchecked: function(event, node) {
+        foldersToSync[node.nodeId] = null;
+        console.log(foldersToSync);
+      }
+    });
+
+    $('#submit-folder-list').on('click', function() {
+      var validPaths = foldersToSync.filter((path) => {
+        return typeof path === 'string';
+      });
+
+      $.post('/dataplug/options', { folders: validPaths }, function(res) {
+        console.log(res);
+        if (res.status === 200 && res.message === 'ok') {
+          $(location).attr('href', '/dataplug/confirm');
+        }
+      }, 'json');
+
     });

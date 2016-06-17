@@ -82,7 +82,7 @@ exports.getFolderContent = (accessToken, folder, callback) => {
     },
     body: {
       path: folder.folderName,
-      recursive: folder.recursive,
+      recursive: true,
       include_media_info: true
     },
     json: true

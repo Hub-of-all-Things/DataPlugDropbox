@@ -64,12 +64,13 @@ router.get('/options', (req, res, next) => {
 }, errors.renderErrorPage);
 
 router.post('/options', (req, res, next) => {
-  const folderList = req.body['folderList'];
-  const isRecursive = req.body['recursive'];
+  const folderList = req.body['folders[]'];
 
-  if (!folderList) return res.redirect('/dataplug/options');
+  if (!folderList) return res.json({ status: 400, message: 'Submission not valid' });
 
-  const formattedFolderList = helpers.tranformFolderList(folderList, isRecursive);
+  const formattedFolderList = folderList.map(folderPath => {
+    return { folderName: folderPath, cursor: '' };
+  });
 
   db.createDataSources('photos',
                        'dropbox',
@@ -86,9 +87,13 @@ router.post('/options', (req, res, next) => {
       if (err) return next();
 
       update.addInitJob(savedEntries[0]);
-      return res.render('confirmation');
+      return res.json({ status: 200, message: 'ok' });
     });
   });
 }, errors.renderErrorPage);
+
+router.get('/confirm', (req, res, next) => {
+  return res.render('confirmation');
+});
 
 module.exports = router;
