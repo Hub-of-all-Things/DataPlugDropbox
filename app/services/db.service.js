@@ -12,6 +12,29 @@ exports.countDataSources = (hatUrl, callback) => {
   });
 };
 
+exports.findDueJobs = (onQueueJobs, callback) => {
+  return DboxFolder.find({ nextRunAt: { $lt: new Date() },
+                          _id: { $nin: onQueueJobs } })
+                   .populate('dataSource')
+                   .exec(callback);
+};
+
+exports.lockJob = (jobId, callback) => {
+  const docUpdate = {
+    lastRunAt: new Date(),
+    lockedAt: new Date()
+  };
+
+  return DboxFolder.findByIdAndUpdate(jobId, docUpdate, { new: true }, callback);
+};
+
+exports.getAllDboxFoldersByAccount = (accountId, onQueueJobs, callback) => {
+  return DboxFolder.find({ accountId: accountId,
+                          _id: { $nin: onQueueJobs } })
+                   .populate('dataSource')
+                   .exec(callback);
+};
+
 exports.createDataSources = (names, source, hatHost, hatAT, sourceAT, callback) => {
   if (typeof names === 'string') names = [names];
 
@@ -44,7 +67,6 @@ exports.createDboxFolder = (dataSourceId, accountId, subscribedFolders, callback
       dataSource: dataSourceId,
       accountId: accountId,
       folderName: folder.folderName,
-      recursive: folder.recursive,
       cursor: folder.cursor,
       createdAt: currentTime,
       lastRunAt: null,
@@ -55,7 +77,7 @@ exports.createDboxFolder = (dataSourceId, accountId, subscribedFolders, callback
     };
   });
 
-  return DboxAccount.create(newDbEntries, callback);
+  return DboxFolder.create(newDbEntries, callback);
 };
 
 exports.updateDataSource = (docUpdate, dataSource, callback) => {
@@ -66,4 +88,24 @@ exports.updateDataSource = (docUpdate, dataSource, callback) => {
   };
 
   return HatDataSource.findOneAndUpdate(dataSourceFindParams, docUpdate, { new: true }, callback);
+};
+
+exports.updateDboxFolder = (folder, isSuccess, nextRunAt, callback) => {
+  if (typeof callback === 'undefined') {
+    callback = nextRunAt;
+    nextRunAt = null;
+  }
+
+  let docUpdate = {
+    nextRunAt: nextRunAt,
+    lockedAt: null
+  };
+
+  if (isSuccess) {
+    docUpdate.lastSuccessAt = new Date();
+  } else {
+    docUpdate.lastFailureAt = new Date();
+  }
+
+  return DboxFolder.findByIdAndUpdate(folder._id, docUpdate, { new: true }, callback);
 };

@@ -10,7 +10,7 @@ const db = require('../services/db.service');
 const hat = require('../services/hat.service');
 const dbox = require('../services/dbox.service');
 const market = require('../services/market.service');
-const helpers = require('../helpers');
+const update = require('../services/update.service');
 
 router.get('/', (req, res, next) => {
   return res.render('dataPlugLanding', { hatHost: req.query.hat });
@@ -54,21 +54,22 @@ router.get('/options', (req, res, next) => {
 
     req.session.dboxAccountId = accountId;
 
-    dbox.getAllFolders(req.session.sourceAccessToken, (err, folderList) => {
+    dbox.getAllFolders(req.session.sourceAccessToken, (err, folderTree) => {
       if (err) return next();
 
-      return res.render('syncOptions', { folderList: folderList });
+      return res.render('syncOptions', { folderTree: folderTree });
     });
   });
 }, errors.renderErrorPage);
 
 router.post('/options', (req, res, next) => {
-  const folderList = req.body['folderList'];
-  const isRecursive = req.body['recursive'];
+  const folderList = req.body['folders[]'];
 
-  if (!folderList) return res.redirect('/dataplug/options');
+  if (!folderList) return res.json({ status: 400, message: 'Submission not valid' });
 
-  const formattedFolderList = helpers.tranformFolderList(folderList, isRecursive);
+  const formattedFolderList = folderList.map(folderPath => {
+    return { folderName: folderPath, cursor: '' };
+  });
 
   db.createDataSources('photos',
                        'dropbox',
@@ -79,14 +80,19 @@ router.post('/options', (req, res, next) => {
     if (err) return next();
 
     db.createDboxFolder(savedEntries[0]._id,
-                         req.session.dboxAccountId,
-                         formattedFolderList,
-                         (err, savedDboxAcc) => {
+                        req.session.dboxAccountId,
+                        formattedFolderList,
+                        (err, savedDboxAcc) => {
       if (err) return next();
 
-      return res.render('confirmation');
+      update.addInitJob(savedEntries[0]);
+      return res.json({ status: 200, message: 'ok' });
     });
   });
 }, errors.renderErrorPage);
+
+router.get('/confirm', (req, res, next) => {
+  return res.render('confirmation');
+});
 
 module.exports = router;

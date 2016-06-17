@@ -6,19 +6,50 @@ block content
       h1 Dropbox Photo synchronisation options
       p.plug-info Please select folders to be synchronised
       p.plug-info Available folders:
-      form(action="/dataplug/options", method="post")
-        ul.folderList#folderList
-          li.tablerow
-            span.tablecell Sync?
-            span.tablecell Check subfolder?
-            span.tablecell Folder name
+      #tree.treeview
+      div.actions
+        button.plug-button#submit-folder-list(type="submit") Add Selected Folders
 
-          - each item in folderList
-            li.tablerow
-              span.tablecell
-                input(type="checkbox", name="folderList", value=item.path_lower)
-              span.tablecell
-                input(type="checkbox", name="recursive", value=item.path_lower)
-              span.tablecell= item.path_lower
-        div.actions
-          button.plug-button(type="submit") Add Selected Folders
+  script.
+    var foldersToSync = [];
+
+    $('#tree').treeview({
+      backColor: 'transparent',
+      onhoverColor: 'rgba(255, 255, 255, 0.2)',
+      levels: 1,
+      showIcon: false,
+      showBorder: false,
+      showCheckbox: true,
+      showTags: true,
+      data: !{JSON.stringify(folderTree)},
+
+      onNodeChecked: function(event, node) {
+        var nodeId = node.nodeId;
+        var path = '/' + node.text;
+        while (node.parentId !== undefined) {
+          node = $('#tree').treeview('getParent', node);
+          path = '/' + node.text + path;
+        }
+        foldersToSync[nodeId] = path;
+        console.log(foldersToSync);
+      },
+
+      onNodeUnchecked: function(event, node) {
+        foldersToSync[node.nodeId] = null;
+        console.log(foldersToSync);
+      }
+    });
+
+    $('#submit-folder-list').on('click', function() {
+      var validPaths = foldersToSync.filter((path) => {
+        return typeof path === 'string';
+      });
+
+      $.post('/dataplug/options', { folders: validPaths }, function(res) {
+        console.log(res);
+        if (res.status === 200 && res.message === 'ok') {
+          $(location).attr('href', '/dataplug/confirm');
+        }
+      }, 'json');
+
+    });

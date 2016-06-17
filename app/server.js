@@ -10,6 +10,8 @@ const indexRoutes = require('./routes/index');
 const dataPlugRoutes = require('./routes/dataPlug');
 const callbackRoutes = require('./routes/callback');
 
+const updateSvc = require('./services/update.service');
+
 var errors = require('./errors');
 var config = require('./config');
 

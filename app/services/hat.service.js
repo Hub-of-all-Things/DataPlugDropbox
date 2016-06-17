@@ -3,6 +3,7 @@
 const hat = require('hat-node-sdk');
 const request = require('request');
 const qs = require('qs');
+const async = require('async');
 
 const config = require('../config');
 const db = require('../services/db.service');
@@ -61,19 +62,32 @@ exports.mapOrCreateModel = (dataSource, callback) => {
   const client = new hat.Client('http://' + dataSource.hatHost, dataSource.hatAccessToken);
 
   if (!dataSource.dataSourceModelId) {
-    client.createDataSourceModel(dataSource.dataSourceModel, (err, createdModel) => {
+    client.getDataSourceId(dataSource.name, dataSource.source, (err, model) => {
       if (err) return callback(err);
 
-      db.updateDataSource({ dataSourceModelId: createdModel.id }, dataSource, (err, savedDataSource) => {
-        if (err) return callback(err);
-        exports.mapOrCreateModel(savedDataSource, callback);
-      });
+      if (model && model.id) {
+        db.updateDataSource({ dataSourceModelId: model.id }, dataSource, (err, savedDataSource) => {
+          if (err) return callback(err);
+
+          return exports.mapOrCreateModel(savedDataSource, callback);
+        });
+      } else {
+        client.createDataSourceModel(dataSource.dataSourceModel, (err, createdModel) => {
+          if (err) return callback(err);
+
+          db.updateDataSource({ dataSourceModelId: createdModel.id }, dataSource, (err, savedDataSource) => {
+            if (err) return callback(err);
+            exports.mapOrCreateModel(savedDataSource, callback);
+          });
+        });
+      }
     });
   } else if (!dataSource.hatIdMapping) {
     client.getDataSourceModel(dataSource.dataSourceModelId, (err, model) => {
+      let hatIdMapping;
 
       try {
-        const hatIdMapping = hat.transform.mapDataSourceModelIds(model);
+        hatIdMapping = hat.transform.mapDataSourceModelIds(model);
       } catch (e) {
         return callback(err);
       }

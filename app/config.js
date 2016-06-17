@@ -1,7 +1,10 @@
-var PRODUCTION = process.env.NODE_ENV === 'production';
-var TEST = process.env.NODE_ENV === 'test';
+'use strict';
 
-var config = {};
+let PRODUCTION = process.env.NODE_ENV === 'production';
+let TEST = process.env.NODE_ENV === 'test';
+
+let config = {};
+
 config.currentEnv = process.env.NODE_ENV || 'development';
 
 config.webServer = {
@@ -29,6 +32,11 @@ config.market = {
 config.hat = {
   username: process.env.HAT_USER,
   password: process.env.HAT_PASSWORD
+};
+
+config.updateService = {
+  dbCheckInterval: 10 * 60 * 1000,
+  repeatInterval: 60 * 1000
 };
 
 if (TEST) config.webServer.port = 5525;

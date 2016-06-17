@@ -6,6 +6,8 @@ const _ = require('lodash');
 
 const config = require('../config');
 
+let internals = {};
+
 exports.exchangeCodeForToken = (code, callback) => {
   const tokenRequestOptions = {
     url: 'https://api.dropboxapi.com/1/oauth2/token',
@@ -54,7 +56,7 @@ exports.getAllFolders = (accessToken, callback) => {
     },
     body: {
       path: '',
-      recursive: false
+      recursive: true
     },
     json: true
   };
@@ -62,9 +64,12 @@ exports.getAllFolders = (accessToken, callback) => {
   request.post(requestOptions, function (err, response, body) {
     if (err) return callback(err);
 
-    var folderList = _.filter(body.entries, { '.tag': 'folder'} );
+    let folderTree;
 
-    return callback(null, folderList);
+    try { folderTree = internals.generateFolderTree(body); }
+    catch (e) { return callback(e); }
+
+    return callback(null, folderTree);
   });
 };
 
@@ -77,7 +82,7 @@ exports.getFolderContent = (accessToken, folder, callback) => {
     },
     body: {
       path: folder.folderName,
-      recursive: folder.recursive,
+      recursive: true,
       include_media_info: true
     },
     json: true
@@ -91,10 +96,80 @@ exports.getFolderContent = (accessToken, folder, callback) => {
   request.post(requestOptions, (err, response, body) => {
     if (err) return callback(err);
 
-    folder.cursor = body.cursor;
-    const filesOnlyArray = _.filter(body.entries, { '.tag': 'file'} );
+    if (body.entries && body.cursor) {
+      folder.cursor = body.cursor;
+      const photoArray = internals.filterByType(body.entries, 'photo');
+      const validPhotoArray = internals.modifyInvalidKeys(photoArray);
 
-    callback(null, filesOnlyArray);
+      return callback(null, validPhotoArray);
+    } else {
+      return callback(new Error('Invalid response from Dropbox'));
+    }
+
+
   });
+};
+
+internals.filterByType = (array, type) => {
+  return array.filter((obj) => {
+    if (obj['media_info'] && obj['media_info']['metadata']
+      && obj['media_info']['metadata']['.tag'] === type) {
+      return true;
+    } else {
+      return false;
+    }
+  });
+};
+
+internals.modifyInvalidKeys = (array) => {
+  return array.map((obj) => {
+    const str = JSON.stringify(obj);
+    const cleanStr = str.replace(/"\.tag":/g, '"tag":');
+    const cleanObj = JSON.parse(cleanStr);
+
+    return cleanObj;
+  });
+};
+
+internals.generateFolderTree = (body) => {
+  if (!body.entries || !Array.isArray(body.entries)) {
+    throw new Error('Invalid data returned from dropbox.');
+  }
+
+  const folderEntries = body.entries.filter((entry) => {
+    return entry['.tag'] === 'folder';
+  });
+
+  const folderPaths = folderEntries.map((entry) => {
+    return entry['path_lower'].substr(1).split('/');
+  });
+
+  return folderPaths.reduce((memo, path) => {
+    return internals.processPath(memo, path);
+  }, []);
+};
+
+internals.processPath = (treeNode, path) => {
+  const nodeName = path[0];
+  const rest = path.slice(1);
+
+  let node = treeNode.find((node) => {
+    return node.text === nodeName;
+  });
+
+  if (!node) {
+    node = { text: nodeName };
+    treeNode.push(node);
+  }
+
+  if (rest.length > 0) {
+    if (node.nodes) {
+      node.nodes = internals.processPath(node.nodes, rest);
+    } else {
+      node.nodes = internals.processPath([], rest);
+    }
+  }
+
+  return treeNode;
 };
 
