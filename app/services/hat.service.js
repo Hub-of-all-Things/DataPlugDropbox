@@ -63,8 +63,6 @@ exports.mapOrCreateModel = (dataSource, callback) => {
 
   if (!dataSource.dataSourceModelId) {
     client.getDataSourceId(dataSource.name, dataSource.source, (err, model) => {
-      if (err) return callback(err);
-
       if (model && model.id) {
         db.updateDataSource({ dataSourceModelId: model.id }, dataSource, (err, savedDataSource) => {
           if (err) return callback(err);
