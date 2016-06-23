@@ -21,9 +21,9 @@ router.post('/hat', (req, res, next) => {
 
   req.session.hatUrl = req.body['hat_url'];
 
-  market.connectHat(req.session.hatUrl, (err) => {
+  //market.connectHat(req.session.hatUrl, (err) => {
 
-    if (err) return next();
+    //if (err) return next();
 
     hat.getAccessToken(req.session.hatUrl, (err, hatAccessToken) => {
 
@@ -44,7 +44,7 @@ router.post('/hat', (req, res, next) => {
         }
       });
     });
-  });
+  //});
 
 }, errors.renderErrorPage);
 
@@ -74,7 +74,6 @@ router.post('/options', (req, res, next) => {
   db.createDataSources('photos',
                        'dropbox',
                        req.session.hatUrl,
-                       req.session.hatAccessToken,
                        req.session.sourceAccessToken,
                        (err, savedEntries) => {
     if (err) return next();
@@ -85,7 +84,7 @@ router.post('/options', (req, res, next) => {
                         (err, savedDboxAcc) => {
       if (err) return next();
 
-      update.addInitJob(savedEntries[0]);
+      update.addInitJob(savedEntries[0], req.session.hatAccessToken);
       return res.json({ status: 200, message: 'ok' });
     });
   });

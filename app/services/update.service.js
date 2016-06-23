@@ -30,8 +30,8 @@ setInterval(() => {
   });
 }, config.updateService.dbCheckInterval);
 
-exports.addInitJob = (dataSource) => {
-  queue.unshift({ task: 'CREATE_MODEL', info: dataSource }, (err) => {
+exports.addInitJob = (dataSource, hatAccessToken) => {
+  queue.unshift({ task: 'CREATE_MODEL', info: dataSource, accessToken: hatAccessToken }, (err) => {
     if (err) {
         console.log('Error occured when creating model.');
       } else {
@@ -79,10 +79,13 @@ function work(item, cb) {
       });
     });
   } else if (item.task === 'CREATE_MODEL') {
-    hat.mapOrCreateModel(item.info, (err) => {
+    hat.mapOrCreateModel(item.info, item.accessToken, (err) => {
       onQueueJobs.shift();
       cb();
     });
+  } else {
+    console.log('Task description could not be parsed.');
+    cb();
   }
 }
 
