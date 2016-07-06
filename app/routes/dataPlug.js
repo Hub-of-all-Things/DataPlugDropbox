@@ -74,7 +74,6 @@ router.post('/options', (req, res, next) => {
   db.createDataSources('photos',
                        'dropbox',
                        req.session.hatUrl,
-                       req.session.hatAccessToken,
                        req.session.sourceAccessToken,
                        (err, savedEntries) => {
     if (err) return next();
@@ -85,7 +84,7 @@ router.post('/options', (req, res, next) => {
                         (err, savedDboxAcc) => {
       if (err) return next();
 
-      update.addInitJob(savedEntries[0]);
+      update.addInitJob(savedEntries[0], req.session.hatAccessToken);
       return res.json({ status: 200, message: 'ok' });
     });
   });

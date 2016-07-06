@@ -35,13 +35,12 @@ exports.getAllDboxFoldersByAccount = (accountId, onQueueJobs, callback) => {
                    .exec(callback);
 };
 
-exports.createDataSources = (names, source, hatHost, hatAT, sourceAT, callback) => {
+exports.createDataSources = (names, source, hatHost, sourceAT, callback) => {
   if (typeof names === 'string') names = [names];
 
   const newDbEntries = names.map((name) => {
     return {
       hatHost: hatHost,
-      hatAccessToken: hatAT,
       name: name,
       source: source,
       sourceAccessToken: sourceAT,
