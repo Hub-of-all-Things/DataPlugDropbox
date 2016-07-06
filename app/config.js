@@ -41,12 +41,12 @@ config.updateService = {
 
 if (TEST) config.webServer.port = 5525;
 
-config.webServerURL = 'http://' + config.webServer.host + ':' + config.webServer.port;
+config.webServerURL = 'https://' + config.webServer.host + ':' + config.webServer.port;
 
 config.dbURL = 'mongodb://' + config.mongodb.host + ':' + config.mongodb.port +
 '/' + config.mongodb.db + '_' + config.currentEnv;
 
-config.market.url = 'http://' + config.market.host + '/api/dataplugs/' + config.market.id +
+config.market.url = 'https://' + config.market.host + '/api/dataplugs/' + config.market.id +
 '/connect';
 
 module.exports = config;
