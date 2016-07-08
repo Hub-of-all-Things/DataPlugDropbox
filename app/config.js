@@ -24,7 +24,7 @@ config.dbox = {
 };
 
 config.market = {
-  host: 'marketsquare.hubofallthings.net',
+  host: process.env.MARKET_DOMAIN,
   id: process.env.MARKET_ID,
   accessToken: process.env.MARKET_ACCESS_TOKEN
 };
@@ -41,12 +41,14 @@ config.updateService = {
 
 if (TEST) config.webServer.port = 5525;
 
-config.webServerURL = 'https://' + config.webServer.host;
+const protocol = process.env.SECURE === 'true' ? 'https' : 'http';
+
+config.webServerURL = protocol + '://' + config.webServer.host;
 
 config.dbURL = 'mongodb://' + config.mongodb.host + ':' + config.mongodb.port +
 '/' + config.mongodb.db + '_' + config.currentEnv;
 
-config.market.url = 'https://' + config.market.host + '/api/dataplugs/' + config.market.id +
+config.market.url = protocol + '://' + config.market.host + '/api/dataplugs/' + config.market.id +
 '/connect';
 
 module.exports = config;
