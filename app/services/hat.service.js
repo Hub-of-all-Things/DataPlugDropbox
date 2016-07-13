@@ -6,6 +6,7 @@ const qs = require('qs');
 const async = require('async');
 
 const config = require('../config');
+const dboxModels = require('../config/dboxHatModels');
 const db = require('../services/db.service');
 const dbox = require('../services/dbox.service');
 
@@ -13,7 +14,7 @@ let internals = {};
 
 exports.getAccessToken = (hatHost, callback) => {
   const reqOptions = {
-    url: 'https://' + hatHost + '/users/access_token',
+    url: config.protocol + '://' + hatHost + '/users/access_token',
     headers: {
       "Accept": "application/json",
       "Content-Type": "application/json"
@@ -30,6 +31,24 @@ exports.getAccessToken = (hatHost, callback) => {
 
     return callback(null, body.accessToken);
   });
+};
+
+exports.updateMetadata = (hatDomain, sourceAccessToken, hatAccessToken, callback) => {
+  const record = {
+    access_token: sourceAccessToken,
+    is_active: true
+  };
+
+  const client = new hat.Client(config.protocol + '://' + hatDomain, hatAccessToken);
+
+  client.getOrCreateTable('metadata', 'dropbox_data_plug', dboxModels.metadata, (err, hatIdMapping) => {
+    if (err) return callback(err);
+
+    const formattedRecord = hat.transform.transformObjToHat(record, hatIdMapping);
+
+    return client.createMultipleRecords(formattedRecord, callback);
+  });
+
 };
 
 exports.updateDataSource = (dataSource, folder, callback) => {
@@ -63,11 +82,10 @@ exports.updateDataSource = (dataSource, folder, callback) => {
 };
 
 exports.mapOrCreateModel = (dataSource, accessToken, callback) => {
-  const client = new hat.Client('https://' + dataSource.hatHost, accessToken);
+  const client = new hat.Client(config.protocol + '://' + dataSource.hatHost, accessToken);
 
   if (!dataSource.dataSourceModelId) {
     client.getDataSourceId(dataSource.name, dataSource.source, (err, model) => {
-      console.log("REQ", err, model);
       if (model && model.id) {
         db.updateDataSource({ dataSourceModelId: model.id }, dataSource, (err, savedDataSource) => {
           if (err) return callback(err);
@@ -76,7 +94,6 @@ exports.mapOrCreateModel = (dataSource, accessToken, callback) => {
         });
       } else {
         client.createDataSourceModel(dataSource.dataSourceModel, (err, createdModel) => {
-          console.log('CREATE', err, createdModel);
           if (err) return callback(err);
 
           db.updateDataSource({ dataSourceModelId: createdModel.id }, dataSource, (err, savedDataSource) => {
@@ -115,6 +132,6 @@ internals.asyncTranformObjToHat = (hatIdMapping, data, callback) => {
 };
 
 internals.createHatRecords = (hatHost, hatAccessToken, records, callback) => {
-  var client = new hat.Client('https://' + hatHost, hatAccessToken);
+  var client = new hat.Client(config.protocol + '://' + hatHost, hatAccessToken);
   client.createMultipleRecords(records, callback);
 };

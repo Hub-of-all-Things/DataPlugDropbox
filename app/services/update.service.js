@@ -42,6 +42,13 @@ exports.addInitJob = (dataSource, hatAccessToken) => {
   onQueueJobs.unshift(dataSource._id);
 };
 
+exports.addMetadataJob = (hatDomain, sourceAccessToken, hatAccessToken) => {
+  queue.unshift({
+    task: 'UPDATE_METADATA',
+    info: { hatDomain: hatDomain, sourceAccessToken: sourceAccessToken, hatAccessToken: hatAccessToken }
+  });
+}
+
 exports.addNewJobsByAccount = (account, callback) => {
   db.getAllDboxFoldersByAccount(account, onQueueJobs, (err, results) => {
     if (err) return callback(err);
@@ -81,6 +88,10 @@ function work(item, cb) {
   } else if (item.task === 'CREATE_MODEL') {
     hat.mapOrCreateModel(item.info, item.accessToken, (err) => {
       onQueueJobs.shift();
+      cb();
+    });
+  } else if (item.task === 'UPDATE_METADATA') {
+    hat.updateMetadata(item.info.hatDomain, item.info.sourceAccessToken, item.info.hatAccessToken, (err, createdRecord) => {
       cb();
     });
   } else {

@@ -34,21 +34,23 @@ config.hat = {
   password: process.env.HAT_PASSWORD
 };
 
+config.protocol = process.env.SECURE === 'true' ? 'https' : 'http';
+
 config.updateService = {
-  dbCheckInterval: 10 * 60 * 1000,
+  dbCheckInterval: 2 * 60 * 1000,
   repeatInterval: 60 * 1000
 };
 
 if (TEST) config.webServer.port = 5525;
 
-const protocol = process.env.SECURE === 'true' ? 'https' : 'http';
+config.webServerURL = config.protocol + '://' + config.webServer.host;
 
-config.webServerURL = protocol + '://' + config.webServer.host;
+if (!PRODUCTION) config.webServerURL += ':' + config.webServer.port;
 
 config.dbURL = 'mongodb://' + config.mongodb.host + ':' + config.mongodb.port +
 '/' + config.mongodb.db + '_' + config.currentEnv;
 
-config.market.url = protocol + '://' + config.market.host + '/api/dataplugs/' + config.market.id +
+config.market.url = config.protocol + '://' + config.market.host + '/api/dataplugs/' + config.market.id +
 '/connect';
 
 module.exports = config;

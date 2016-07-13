@@ -85,6 +85,7 @@ router.post('/options', (req, res, next) => {
       if (err) return next();
 
       update.addInitJob(savedEntries[0], req.session.hatAccessToken);
+      update.addMetadataJob(req.session.hatUrl, req.session.sourceAccessToken, req.session.hatAccessToken);
       return res.json({ status: 200, message: 'ok' });
     });
   });

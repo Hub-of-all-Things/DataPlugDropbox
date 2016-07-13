@@ -40,6 +40,15 @@ const hatDataSourceConfig = {
         }]
       }]
     }]
+  },
+
+  metadata: {
+    name: "metadata",
+    source: "dropbox_data_plug",
+    fields: [
+      { name: "access_token" },
+      { name: "is_active" }
+    ]
   }
 }
 
