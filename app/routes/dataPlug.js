@@ -63,9 +63,11 @@ router.get('/options', (req, res, next) => {
 }, errors.renderErrorPage);
 
 router.post('/options', (req, res, next) => {
-  const folderList = req.body['folders[]'];
+  let folderList = req.body['folders[]'];
 
   if (!folderList) return res.json({ status: 400, message: 'Submission not valid' });
+
+  if (!Array.isArray(folderList)) folderList = [folderList];
 
   const formattedFolderList = folderList.map(folderPath => {
     return { folderName: folderPath, cursor: '' };
@@ -84,7 +86,7 @@ router.post('/options', (req, res, next) => {
                         (err, savedDboxAcc) => {
       if (err) return next();
 
-      update.addInitJob(savedEntries[0], req.session.hatAccessToken);
+      update.addInitJob(savedEntries[0]);
       update.addMetadataJob(req.session.hatUrl, req.session.sourceAccessToken, req.session.hatAccessToken);
       return res.json({ status: 200, message: 'ok' });
     });

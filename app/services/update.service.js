@@ -11,31 +11,31 @@ let queue = async.queue(work, 1);
 let onQueueJobs = [];
 
 setInterval(() => {
-  console.log('Checking DB for tasks... ');
+  console.log('[Update module] Checking database for tasks...');
 
   db.findDueJobs(onQueueJobs, (err, results) => {
     const updateTasks = results.reduce((memo, result) => {
       if (result.dataSource.dataSourceModelId && result.dataSource.hatIdMapping) {
-        memo.push({
-          task: 'UPDATE_RECORDS',
-          info: result
-        });
+        memo.push({ task: 'UPDATE_RECORDS', updateInfo: result, dataSource: result.dataSource });
+      } else {
+        memo.push({ task: 'CREATE_MODEL', dataSource: result.dataSource });
       }
 
       return memo;
     }, []);
 
-    console.log(updateTasks);
+    console.log(`[Update module] Successfully added ${updateTasks.length} update jobs to queue.`);
     return internals.addNewJobs(updateTasks);
   });
 }, config.updateService.dbCheckInterval);
 
 exports.addInitJob = (dataSource, hatAccessToken) => {
-  queue.unshift({ task: 'CREATE_MODEL', info: dataSource, accessToken: hatAccessToken }, (err) => {
+  queue.unshift({ task: 'CREATE_MODEL', dataSource: dataSource }, (err) => {
     if (err) {
-        console.log('Error occured when creating model.');
+        console.log(`[JOB][CREATE - ERROR] ${dataSource.source} ${dataSource.name} for ${dataSource.hatHost}`);
+        console.log('Following error occured: ', err);
       } else {
-        console.log('Model has been successfully created.');
+        console.log(`[JOB][CREATE - DONE] ${dataSource.source} ${dataSource.name} for ${dataSource.hatHost}`);
       }
   });
 
@@ -55,7 +55,8 @@ exports.addNewJobsByAccount = (account, callback) => {
       const tasks = results.map((result) => {
         return {
           task: "UPDATE_RECORDS",
-          info: result
+          updateInfo: result,
+          dataSource: result.dataSource
         };
       });
 
@@ -66,36 +67,40 @@ exports.addNewJobsByAccount = (account, callback) => {
 
 function work(item, cb) {
   if (item.task === 'UPDATE_RECORDS') {
-    db.lockJob(item.info._id, (err, savedJob) => {
+    db.lockJob(item.updateInfo._id, (err, savedJob) => {
       if (err) {
         console.log(err);
         onQueueJobs.shift();
-        return cb();
+        return cb(err);
       }
 
-      hat.updateDataSource(item.info.dataSource, item.info, (err) => {
+      hat.updateDataSource(item.dataSource, item.updateInfo, (err) => {
         const currentTime = new Date();
 
         const isSuccess = !err;
 
         const nextRunAt = err ? new Date(currentTime.getTime() + config.updateService.repeatInterval) : null;
 
-        db.updateDboxFolder(item.info, isSuccess, nextRunAt, (err) => {
-          cb();
+        db.updateDboxFolder(item.updateInfo, isSuccess, nextRunAt, (err) => {
+          cb(err);
         });
       });
     });
   } else if (item.task === 'CREATE_MODEL') {
-    hat.mapOrCreateModel(item.info, item.accessToken, (err) => {
-      onQueueJobs.shift();
-      cb();
+    hat.getAccessToken(item.dataSource.hatHost, (err, hatAccessToken) => {
+      if (err) return cb(err);
+
+      hat.mapOrCreateModel(item.dataSource, hatAccessToken, (err) => {
+        onQueueJobs.shift();
+        cb(err);
+      });
     });
   } else if (item.task === 'UPDATE_METADATA') {
     hat.updateMetadata(item.info.hatDomain, item.info.sourceAccessToken, item.info.hatAccessToken, (err, createdRecord) => {
       cb();
     });
   } else {
-    console.log('Task description could not be parsed.');
+    console.log('[Update module] Task description could not be parsed.');
     cb();
   }
 }
@@ -104,20 +109,22 @@ internals.addNewJobs = (jobs) => {
   async.eachSeries(jobs, (job, callback) => {
     queue.push(job, (err) => {
       if (err) {
-        console.log('Error occured when processing job.');
+        console.log(`[JOB][${job.task === 'UPDATE_RECORDS' ? 'UPDATE' : 'CREATE'} - ERROR] ${job.dataSource.source} ${job.dataSource.name} update job for ${job.dataSource.hatHost}.`);
+        console.log('Following error occured: ', err);
       } else {
-        console.log('Job has been completed.');
-        console.log('ON QUEUE', queue.length());
-        console.log('OnQueueArray', onQueueJobs.length);
-
-        onQueueJobs.shift();
+        console.log(`[JOB][${job.task === 'UPDATE_RECORDS' ? 'UPDATE' : 'CREATE'} - DONE] ${job.dataSource.source} ${job.dataSource.name} for ${job.dataSource.hatHost}.`);
       }
+      onQueueJobs.shift();
     });
 
-    onQueueJobs.push(job.info._id);
+    if (job.updateInfo) {
+      onQueueJobs.push(job.updateInfo._id);
+    } else {
+      onQueueJobs.push(job.dataSource._id);
+    }
 
     return callback();
   }, () => {
-    console.log('All tasks submitted to queue.');
+    console.log('[Update module] All tasks submitted to queue.');
   });
 };
