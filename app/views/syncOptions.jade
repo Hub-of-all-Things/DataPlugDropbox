@@ -1,14 +1,13 @@
 extends layout
 
 block content
-  .wrapper
-    .container
-      h1 Dropbox Photo synchronisation options
-      p.plug-info Please select folders to be synchronised
-      p.plug-info Available folders:
-      #tree.treeview
-      div.actions
-        button.plug-button#submit-folder-list(type="submit") Add Selected Folders
+  h2 Photo synchronisation options
+  p.plug-info Please select folders to be synchronised.
+  p.plug-info Available folders:
+  #tree.treeview
+  .container
+    div.actions
+      button.plug-button#submit-folder-list(type="submit") Add Selected Folders
 
   script.
     var foldersToSync = [];
