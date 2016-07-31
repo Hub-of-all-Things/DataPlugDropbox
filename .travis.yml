@@ -6,7 +6,7 @@ services:
   - docker
 
 script:
-  - docker build -t hubofallthings/dropbox-dataplug
+  - docker build -t hubofallthings/dropbox-dataplug .
 
 after_success:
   - if [ "$TRAVIS_BRANCH" == "master" ]; then
