@@ -4,7 +4,7 @@ var favicon = require('serve-favicon');
 var logger = require('morgan');
 var session = require('express-session');
 var bodyParser = require('body-parser');
-var mongoose = require('mongoose');
+var mongoose = require('./config/db');
 
 const indexRoutes = require('./routes/index');
 const dataPlugRoutes = require('./routes/dataPlug');
@@ -39,7 +39,7 @@ app.use('/dropbox', callbackRoutes);
 
 // mongoose
 
-mongoose.connect(config.dbURL);
+var db = mongoose();
 
 // catch 404 and forward to error handler
 app.use(errors.notFound);
