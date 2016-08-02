@@ -17,22 +17,32 @@ router.get('/', (req, res, next) => {
 });
 
 router.post('/hat', (req, res, next) => {
-  if (!req.body['hat_url']) return next();
+  if (!req.body['hat_url']) return res.render('dataPlugLanding', { hatHost: req.query.hat });
 
   req.session.hatUrl = req.body['hat_url'];
 
   market.connectHat(req.session.hatUrl, (err) => {
-
-    if (err) return next();
+    if (err) {
+      console.log(`[ERROR][${new Date()}]`, err);
+      req.dataplug = { statusCode: '502' };
+      return next();
+    }
 
     hat.getAccessToken(req.session.hatUrl, (err, hatAccessToken) => {
-
-      if (err) return next();
+      if (err) {
+        console.log(`[ERROR][${new Date()}]`, err);
+        req.dataplug = { statusCode: '401' };
+        return next();
+      }
 
       req.session.hatAccessToken = hatAccessToken;
 
       db.countDataSources(req.session.hatUrl, (err, count) => {
-        if (err) return next();
+        if (err) {
+          console.log(`[ERROR][${new Date()}]`, err);
+          req.dataplug = { statusCode: '500' };
+          return next();
+        }
 
         if (count === 0) {
           return res.render('dboxAuthoriseLanding', {
@@ -50,12 +60,20 @@ router.post('/hat', (req, res, next) => {
 
 router.get('/options', (req, res, next) => {
   dbox.getAccountId(req.session.sourceAccessToken, (err, accountId) => {
-    if (err) return next();
+    if (err) {
+      console.log(`[ERROR][${new Date()}]`, err);
+      req.dataplug = { statusCode: '502' };
+      return next();
+    }
 
     req.session.dboxAccountId = accountId;
 
     dbox.getAllFolders(req.session.sourceAccessToken, (err, folderTree) => {
-      if (err) return next();
+      if (err) {
+        console.log(`[ERROR][${new Date()}]`, err);
+        req.dataplug = { statusCode: '502' };
+        return next();
+      }
 
       return res.render('syncOptions', { folderTree: folderTree });
     });
@@ -78,13 +96,19 @@ router.post('/options', (req, res, next) => {
                        req.session.hatUrl,
                        req.session.sourceAccessToken,
                        (err, savedEntries) => {
-    if (err) return next();
+    if (err) {
+      console.log(`[ERROR][${new Date()}]`, err);
+      return res.json({ status: 500, message: 'Internal server error'});
+    }
 
     db.createDboxFolder(savedEntries[0]._id,
                         req.session.dboxAccountId,
                         formattedFolderList,
                         (err, savedDboxAcc) => {
-      if (err) return next();
+      if (err) {
+        console.log(`[ERROR][${new Date()}]`, err);
+        return res.json({ status: 500, message: 'Internal server error'});
+      }
 
       update.addInitJob(savedEntries[0]);
       update.addMetadataJob(req.session.hatUrl, req.session.sourceAccessToken, req.session.hatAccessToken);

@@ -11,6 +11,10 @@ exports.connectHat = (hatUrl, callback) => {
 
   request.get(registrationReqOptions, (err, res, body) => {
     if (err) return callback(err);
+    if (res.statusCode === 401 || res.statusCode === 500) {
+      console.log(`[MS Service] Could not connect to MarketSquare`);
+      return callback(new Error('Problem when connecting to MarketSquare.'));
+    }
 
     try {
       const parsedBody = JSON.parse(body);

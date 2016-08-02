@@ -28,6 +28,7 @@ exports.getAccessToken = (hatHost, callback) => {
 
   request.get(reqOptions, (err, res, body) => {
     if (err) return callback(err);
+    if (res.statusCode === 401 || res.statusCode === 500) return callback(body);
 
     return callback(null, body.accessToken);
   });
