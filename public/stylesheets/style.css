@@ -1,34 +1,28 @@
 body {
-  font-family: 'Open Sans Condensed', sans-serif;
+  font-family: 'Open Sans Regular', sans-serif;
   background-color: #262626;
   color: #ffffff;
-  font-weight: 500;
-}
-body ::-webkit-input-placeholder {
-  /* WebKit browsers */
-  font-family: 'Open Sans Condensed', sans-serif;
-  color: rgba(255, 255, 255, 0.8);
   font-weight: 300;
+  font-size: 11px;
+  margin-bottom: 6em;
 }
-body :-moz-placeholder {
-  /* Mozilla Firefox 4 to 18 */
+
+h1, h2, h3, h4, h5, h6,
+.container .plug-button,
+.navbar-brand .brand {
   font-family: 'Open Sans Condensed', sans-serif;
-  color: rgba(255, 255, 255, 0.8);
-  opacity: 1;
-  font-weight: 300;
 }
-body ::-moz-placeholder {
-  /* Mozilla Firefox 19+ */
-  font-family: 'Open Sans Condensed', sans-serif;
-  color: rgba(255, 255, 255, 0.8);
-  opacity: 1;
-  font-weight: 300;
+
+.brand {
+  padding: 1em;
+  font-size: 1.5em;
+  color: #ffffff;
+  text-decoration: none;
 }
-body :-ms-input-placeholder {
-  /* Internet Explorer 10+ */
-  font-family: 'Open Sans Condensed', sans-serif;
-  color: rgba(255, 255, 255, 0.8);
-  font-weight: 300;
+
+.brand:hover {
+  color: #ffffff;
+  text-decoration: none;
 }
 
 .navbar {
@@ -41,16 +35,36 @@ body :-ms-input-placeholder {
   margin-top: 1em;
 }
 
-.brand {
-  padding: 1em;
-  font-size: 2em;
-  color: #ffffff;
-  text-decoration: none;
+.navbar-nav {
+  margin-top: 0.75em;
 }
 
-.brand:hover {
-  color: #ffffff;
-  text-decoration: none;
+.navbar-nav > li > a {
+  padding: 0;
+}
+
+.navbar-nav > li > a,
+.navbar-nav > li > p {
+  font-family: 'Open Sans Condensed', sans-serif;
+  font-size: 1.75em;
+  border: 0;
+  padding: 0.5em 0.5em;
+  color: white;
+  line-height: 0;
+}
+
+.navbar-nav > li > a:hover {
+  background-color: transparent;
+}
+
+.user-nav {
+  margin-top: 0.8em;
+  padding: 0.5em 0.5em;
+  border-left: solid 0.05em #ffffff;
+}
+
+.user-nav:first-child {
+  border: none;
 }
 
 .wrapper {
@@ -100,8 +114,8 @@ body :-ms-input-placeholder {
   margin-top: 1.5em;
   display: block;
   text-align: center;
-  font-size: 1.3em;
-  font-family: 'Open Sans Condensed', sans-serif;
+  font-size: 1.2em;
+  font-family: 'Open Sans Regular', sans-serif;
   -webkit-transition-duration: 0.5s;
           transition-duration: 0.5s;
   font-weight: 300;
@@ -125,7 +139,7 @@ body :-ms-input-placeholder {
   border: 1px solid rgba(255, 255, 255, 0.3);
   padding: 10px 20px;
   border-radius: 0;
-  font-size: 1.25em;
+  font-size: 1.2em;
   margin: 1em 0;
   font-weight: 300;
   font-family: 'Open Sans Condensed', sans-serif;
@@ -135,15 +149,35 @@ body :-ms-input-placeholder {
   width: 100%;
   color: #cccccc;
 }
+
 .container .plug-button:hover {
   background-color: rgba(255, 255, 255, 0.4);
   border: 1px solid rgba(255, 255, 255, 0.6);
   color: #ffffff;
 }
 
+.data-group .body {
+  font-size: 0.9em;
+  line-height: 1.8;
+  margin-top: 0;
+  margin-bottom: 2em;
+  padding: 2em 2em;
+  border: 1px solid white;
+}
+
+.data-group h4 {
+  text-transform: uppercase;
+  margin: 0;
+  margin-top: 2em;
+  padding: 0.75em 1.5em;
+  background-color: white;
+  color: #262626;
+  display: inline-block;
+}
+
 .treeview {
   width: 50%;
   margin: auto;
   text-align: left;
-  font-weight: 100;
+  font-weight: 500;
 }

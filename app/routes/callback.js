@@ -5,8 +5,11 @@ const router = express.Router();
 const async = require('async');
 
 const dbox = require('../services/dbox.service');
+const db = require('../services/db.service');
 const update = require('../services/update.service');
 const errors = require('../errors');
+
+const revokeConfirmPage = require('../views/confirmationPage.marko');
 
 router.get('/authenticate', (req, res, next) => {
   if (!req.query.code) {
@@ -28,6 +31,35 @@ router.get('/authenticate', (req, res, next) => {
 
     req.session.save((err) => {
       res.redirect('/dataplug/options');
+    });
+  });
+}, errors.renderErrorPage);
+
+router.get('/revoke', (req, res, next) => {
+  dbox.revokeToken(req.session.dbox.accessToken, (err) => {
+    if (err) {
+      console.log(`[ERROR][${new Date()}]`, err);
+      req.dataplug = { statusCode: '502' };
+      return next();
+    }
+
+    req.session.dbox.accessToken = '';
+
+    db.deleteFoldersAndDataSources(req.session.hat.domain, (err) => {
+      if (err) {
+        console.log(`[ERROR][${new Date()}]`, err);
+        req.dataplug = { statusCode: '500' };
+        return next();
+      }
+
+      req.session.activeFolders = [];
+
+      return res.marko(revokeConfirmPage, {
+        hat: req.session.hat,
+        rumpelLink: 'https://rumpel.hubofallthings.com/',
+        mainText: `You have successfully logged out of Dropbox and fully deauthorised access to your folders.`,
+        note: ``
+      });
     });
   });
 }, errors.renderErrorPage);

@@ -5,6 +5,7 @@ const router = express.Router();
 
 const config = require('../config');
 const errors = require('../errors');
+const helpers = require('../helpers');
 
 const db = require('../services/db.service');
 const hat = require('../services/hat.service');
@@ -16,6 +17,8 @@ const dropboxLoginForm = require('../views/dboxLoginForm.marko');
 const accountStatsPage = require('../views/accountStats.marko');
 const plugConfigurationPage = require('../views/plugConfiguration.marko');
 const confirmationPage = require('../views/confirmationPage.marko');
+
+router.use(helpers.authMiddleware);
 
 router.get('/main', (req, res, next) => {
   market.connectHat(req.session.hat.domain, (err) => {
@@ -48,8 +51,17 @@ router.get('/main', (req, res, next) => {
             redirectUri: config.webServerURL + '/dropbox/authenticate',
           });
         } else {
-          return res.marko(accountStatsPage, {
-            hat: req.session.hat
+          db.getDboxFoldersByDomain(req.session.hat.domain, (err, dboxFolders) => {
+            req.session.dbox.accessToken = dboxFolders[0].dataSource.sourceAccessToken;
+
+            let activeFolders = dboxFolders.map(folder => folder.folderName);
+
+            req.session.activeFolders = activeFolders;
+
+            return res.marko(accountStatsPage, {
+              dataStats: dboxFolders,
+              hat: req.session.hat
+            });
           });
         }
       });
@@ -59,6 +71,7 @@ router.get('/main', (req, res, next) => {
 }, errors.renderErrorPage);
 
 router.get('/options', (req, res, next) => {
+  console.log(req.session);
   dbox.getAccountId(req.session.dbox.accessToken, (err, accountId) => {
     if (err) {
       console.log(`[ERROR][${new Date()}]`, err);
@@ -68,7 +81,7 @@ router.get('/options', (req, res, next) => {
 
     req.session.dbox.accountId = accountId;
 
-    dbox.getAllFolders(req.session.dbox.accessToken, (err, folderTree) => {
+    dbox.getAllFolders(req.session.dbox.accessToken, req.session.activeFolders, (err, folderTree) => {
       if (err) {
         console.log(`[ERROR][${new Date()}]`, err);
         req.dataplug = { statusCode: '502' };

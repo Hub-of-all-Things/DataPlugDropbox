@@ -47,7 +47,7 @@ exports.getAccountId = (accessToken, callback) => {
   });
 };
 
-exports.getAllFolders = (accessToken, callback) => {
+exports.getAllFolders = (accessToken, activeFolders, callback) => {
   var requestOptions = {
     url: 'https://api.dropboxapi.com/2/files/list_folder',
     headers: {
@@ -66,7 +66,7 @@ exports.getAllFolders = (accessToken, callback) => {
 
     let folderTree;
 
-    try { folderTree = internals.generateFolderTree(body); }
+    try { folderTree = internals.generateFolderTree(body, activeFolders); }
     catch (e) { return callback(e); }
 
     return callback(null, folderTree);
@@ -105,8 +105,24 @@ exports.getFolderContent = (accessToken, folder, callback) => {
     } else {
       return callback(new Error('Invalid response from Dropbox'));
     }
+  });
+};
 
+exports.revokeToken = (accessToken, callback) => {
+  const reqOptions = {
+    url: 'https://api.dropboxapi.com/2/auth/token/revoke',
+    headers: {
+      'Authorization': 'Bearer ' + accessToken,
+      'Content-Type': 'application/json'
+    },
+    json: true
+  };
 
+  request.post(reqOptions, (err, res, body) => {
+    if (err) return callback(err);
+
+    console.log('Successfully REVOKED token.');
+    return callback(null);
   });
 };
 
@@ -131,7 +147,9 @@ internals.modifyInvalidKeys = (array) => {
   });
 };
 
-internals.generateFolderTree = (body) => {
+internals.generateFolderTree = (body, activeFolders) => {
+  activeFolders = activeFolders || [];
+
   if (!body.entries || !Array.isArray(body.entries)) {
     throw new Error('Invalid data returned from dropbox.');
   }
@@ -140,9 +158,13 @@ internals.generateFolderTree = (body) => {
     return entry['.tag'] === 'folder';
   });
 
-  const folderPaths = folderEntries.map((entry) => {
-    return entry['path_lower'].substr(1).split('/');
-  });
+  const folderPaths = folderEntries.reduce((memo, entry) => {
+    if (activeFolders.indexOf(entry['path_lower']) === -1) {
+      memo.push(entry['path_lower'].substr(1).split('/'));
+    }
+
+    return memo;
+  }, []);
 
   return folderPaths.reduce((memo, path) => {
     return internals.processPath(memo, path);

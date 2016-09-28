@@ -17,6 +17,15 @@ router.get('/login', (req, res, next) => {
   });
 });
 
+router.get('/logout', (req, res, next) => {
+  req.session.hat = { authenticated: false, domain: '', url: '' };
+  req.session.dbox = { accessToken: '' };
+
+  return req.session.save(function(err) {
+    return res.redirect('/');
+  });
+});
+
 router.get('/authenticate', (req, res, next) => {
   if (!req.query['token']) {
     return res.send('No token detected!');

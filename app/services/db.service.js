@@ -12,6 +12,28 @@ exports.countDataSources = (hatUrl, callback) => {
   });
 };
 
+exports.getDboxFoldersByDomain = (domain, callback) => {
+  return HatDataSource.find({ hatHost: domain }, (err, dataSource) => {
+    if (err) return callback(err);
+
+    DboxFolder.find({ 'dataSource': dataSource[0]._id })
+      .populate('dataSource')
+      .exec(callback);
+  });
+};
+
+exports.deleteFoldersAndDataSources = (domain, callback) => {
+  return HatDataSource.find({ hatHost: domain }, (err, dataSource) => {
+    if (err) return callback(err);
+
+    return DboxFolder.remove({ 'dataSource': dataSource[0]._id }, (err) => {
+      if (err) return callback(err);
+
+      return HatDataSource.remove({ hatHost: domain }, callback);
+    });
+  });
+};
+
 exports.findDueJobs = (onQueueJobs, callback) => {
   return DboxFolder.find({ nextRunAt: { $lt: new Date() },
                           _id: { $nin: onQueueJobs } })
@@ -38,21 +60,29 @@ exports.getAllDboxFoldersByAccount = (accountId, onQueueJobs, callback) => {
 exports.createDataSources = (names, source, hatHost, sourceAT, callback) => {
   if (typeof names === 'string') names = [names];
 
-  const newDbEntries = names.map((name) => {
-    return {
-      hatHost: hatHost,
-      name: name,
-      source: source,
-      sourceAccessToken: sourceAT,
-      dataSourceModel: dboxHatModels[name],
-      dataSourceModelId: null,
-      hatIdMapping: null,
-      updateFrequency: null,
-      latestRecordDate: '1'
-    };
-  });
+  HatDataSource.find({ hatHost: hatHost }, (err, dataSources) => {
+    if (err) return callback(err);
 
-  return HatDataSource.create(newDbEntries, callback);
+    if (dataSources.length > 0) {
+      return callback(null, dataSources);
+    }
+
+    const newDbEntries = names.map((name) => {
+      return {
+        hatHost: hatHost,
+        name: name,
+        source: source,
+        sourceAccessToken: sourceAT,
+        dataSourceModel: dboxHatModels[name],
+        dataSourceModelId: null,
+        hatIdMapping: null,
+        updateFrequency: null,
+        latestRecordDate: '1'
+      };
+    });
+
+    return HatDataSource.create(newDbEntries, callback);
+  });
 };
 
 exports.createDboxFolder = (dataSourceId, accountId, subscribedFolders, callback) => {
