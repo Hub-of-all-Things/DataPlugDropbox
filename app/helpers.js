@@ -10,9 +10,7 @@ exports.createSessionData = (req, res, next) => {
       url: ''
     };
 
-    return req.session.save(function(err) {
-      return res.redirect('/hat/login');
-    });
+    return next();
   }
 }
 

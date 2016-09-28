@@ -137,7 +137,7 @@ router.get('/confirm', (req, res, next) => {
   return res.marko(confirmationPage, {
       hat: req.session.hat,
       rumpelLink: 'https://rumpel.hubofallthings.com/',
-      mainText: `The Data Plug has been set up to synchronize data between Facebook and your personal HAT.`,
+      mainText: `The Data Plug has been set up to synchronize data between Dropbox and your personal HAT.`,
       note: `It may take up to 5 minutes before the data appears on Rumpel.`
   });
 });
