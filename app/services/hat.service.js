@@ -4,6 +4,7 @@ const hat = require('hat-node-sdk');
 const request = require('request');
 const qs = require('qs');
 const async = require('async');
+const jwt = require('jsonwebtoken')
 
 const config = require('../config');
 const dboxModels = require('../config/dboxHatModels');
@@ -11,6 +12,28 @@ const db = require('../services/db.service');
 const dbox = require('../services/dbox.service');
 
 let internals = {};
+
+exports.verifyToken = (token, callback) => {
+  const decodedToken = jwt.decode(token);
+
+  if (!decodedToken) {
+    return callback(new Error('Invalid JWT token.'));
+  } else if (!decodedToken.iss) {
+    return callback(new Error('JWT token does not contain valid "iss" field.'));
+  }
+
+  const reqUrl = `${config.protocol}://${decodedToken.iss}/publickey`;
+
+  request.get(reqUrl, (err, res, publicKey) => {
+    if (err) return callback(err);
+
+    jwt.verify(token, publicKey, { algorithms: ['RS256'], ignoreExpiration: false }, (err, payload) => {
+      if (err) return callback(null, false);
+
+      return callback(null, true, payload.iss);
+    });
+  });
+};
 
 exports.getAccessToken = (hatHost, callback) => {
   const reqOptions = {

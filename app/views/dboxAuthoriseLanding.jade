@@ -1,8 +1,0 @@
-extends layout
-
-block content
-  h2 Dropbox Login
-  p.plug-info You will be now redirected to Dropbox website to authorise Data Plug's access
-
-  .container
-    a.plug-button(href="https://www.dropbox.com/1/oauth2/authorize?client_id=" + dboxAppKey + "&redirect_uri=" + redirectUri + '&response_type=code') Login to Dropbox

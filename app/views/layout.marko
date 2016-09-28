@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+
+  <head>
+    <meta charset="utf-8">
+    <title>Social Data Plug</title>
+    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Open+Sans+Condensed:300,300italic,700">
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.6/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="/stylesheets/style.css">
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-treeview/1.2.0/bootstrap-treeview.min.js"></script>
+  </head>
+
+  <body>
+    <div class="navbar">
+      <div class="container-fluid">
+        <div class="navbar-header">
+          <div class="navabar-brand">
+            <a href="/" class="brand">Photos Data Plug</a>
+          </div>
+        </div>
+
+        <div class="navbar-collapse collapse" id="navbar-main">
+          <ul class="nav navbar-nav navbar-right">
+            <li class="user-nav"><p>${data.hatDomain}</p></li>
+            <li class="user-nav" if(data.authenticated === false)><a href="/hat/login">Login</a></li>
+            <li class="user-nav" if(data.authenticated === true)><a href="/hat/logout">Logout</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="wrapper col-xs-10 col-xs-offset-1 col-sm-8 col-sm-offset-2 col-md-8 col-md-offset-2 col-lg-6 col-lg-offset-3">
+        <layout-placeholder name="container" />
+      </div>
+    </div>
+  </body>
+</html>

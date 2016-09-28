@@ -22,7 +22,9 @@ router.get('/authenticate', (req, res, next) => {
       return next();
     }
 
-    req.session.sourceAccessToken = sourceAccessToken;
+    req.session.dbox = {
+      accessToken: sourceAccessToken
+    };
 
     req.session.save((err) => {
       res.redirect('/dataplug/options');

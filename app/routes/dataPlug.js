@@ -12,32 +12,29 @@ const dbox = require('../services/dbox.service');
 const market = require('../services/market.service');
 const update = require('../services/update.service');
 
-router.get('/', (req, res, next) => {
-  return res.render('dataPlugLanding', { hatHost: req.query.hat });
-});
+const dropboxLoginForm = require('../views/dboxLoginForm.marko');
+const accountStatsPage = require('../views/accountStats.marko');
+const plugConfigurationPage = require('../views/plugConfiguration.marko');
+const confirmationPage = require('../views/confirmationPage.marko');
 
-router.post('/hat', (req, res, next) => {
-  if (!req.body['hat_url']) return res.render('dataPlugLanding', { hatHost: req.query.hat });
-
-  req.session.hatUrl = req.body['hat_url'];
-
-  market.connectHat(req.session.hatUrl, (err) => {
+router.get('/main', (req, res, next) => {
+  market.connectHat(req.session.hat.domain, (err) => {
     if (err) {
       console.log(`[ERROR][${new Date()}]`, err);
       req.dataplug = { statusCode: '502' };
       return next();
     }
 
-    hat.getAccessToken(req.session.hatUrl, (err, hatAccessToken) => {
+    hat.getAccessToken(req.session.hat.domain, (err, hatAccessToken) => {
       if (err) {
         console.log(`[ERROR][${new Date()}]`, err);
         req.dataplug = { statusCode: '401' };
         return next();
       }
 
-      req.session.hatAccessToken = hatAccessToken;
+      req.session.hat.accessToken = hatAccessToken;
 
-      db.countDataSources(req.session.hatUrl, (err, count) => {
+      db.countDataSources(req.session.hat.domain, (err, count) => {
         if (err) {
           console.log(`[ERROR][${new Date()}]`, err);
           req.dataplug = { statusCode: '500' };
@@ -45,12 +42,15 @@ router.post('/hat', (req, res, next) => {
         }
 
         if (count === 0) {
-          return res.render('dboxAuthoriseLanding', {
+          return res.marko(dropboxLoginForm, {
+            hat: req.session.hat,
             dboxAppKey: config.dbox.appKey,
             redirectUri: config.webServerURL + '/dropbox/authenticate',
           });
         } else {
-          return res.render('dataPlugStats');
+          return res.marko(accountStatsPage, {
+            hat: req.session.hat
+          });
         }
       });
     });
@@ -59,23 +59,26 @@ router.post('/hat', (req, res, next) => {
 }, errors.renderErrorPage);
 
 router.get('/options', (req, res, next) => {
-  dbox.getAccountId(req.session.sourceAccessToken, (err, accountId) => {
+  dbox.getAccountId(req.session.dbox.accessToken, (err, accountId) => {
     if (err) {
       console.log(`[ERROR][${new Date()}]`, err);
       req.dataplug = { statusCode: '502' };
       return next();
     }
 
-    req.session.dboxAccountId = accountId;
+    req.session.dbox.accountId = accountId;
 
-    dbox.getAllFolders(req.session.sourceAccessToken, (err, folderTree) => {
+    dbox.getAllFolders(req.session.dbox.accessToken, (err, folderTree) => {
       if (err) {
         console.log(`[ERROR][${new Date()}]`, err);
         req.dataplug = { statusCode: '502' };
         return next();
       }
 
-      return res.render('syncOptions', { folderTree: folderTree });
+      return res.marko(plugConfigurationPage, {
+        hat: req.session.hat,
+        folderTree: folderTree
+      });
     });
   });
 }, errors.renderErrorPage);
@@ -93,8 +96,8 @@ router.post('/options', (req, res, next) => {
 
   db.createDataSources('photos',
                        'dropbox',
-                       req.session.hatUrl,
-                       req.session.sourceAccessToken,
+                       req.session.hat.domain,
+                       req.session.dbox.accessToken,
                        (err, savedEntries) => {
     if (err) {
       console.log(`[ERROR][${new Date()}]`, err);
@@ -102,7 +105,7 @@ router.post('/options', (req, res, next) => {
     }
 
     db.createDboxFolder(savedEntries[0]._id,
-                        req.session.dboxAccountId,
+                        req.session.dbox.accountId,
                         formattedFolderList,
                         (err, savedDboxAcc) => {
       if (err) {
@@ -111,14 +114,19 @@ router.post('/options', (req, res, next) => {
       }
 
       update.addInitJob(savedEntries[0]);
-      update.addMetadataJob(req.session.hatUrl, req.session.sourceAccessToken, req.session.hatAccessToken);
+      update.addMetadataJob(req.session.hat.domain, req.session.dbox.accessToken, req.session.hat.accessToken);
       return res.json({ status: 200, message: 'ok' });
     });
   });
 }, errors.renderErrorPage);
 
 router.get('/confirm', (req, res, next) => {
-  return res.render('confirmation');
+  return res.marko(confirmationPage, {
+      hat: req.session.hat,
+      rumpelLink: 'https://rumpel.hubofallthings.com/',
+      mainText: `The Data Plug has been set up to synchronize data between Facebook and your personal HAT.`,
+      note: `It may take up to 5 minutes before the data appears on Rumpel.`
+  });
 });
 
 module.exports = router;

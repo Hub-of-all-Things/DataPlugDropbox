@@ -1,15 +1,17 @@
-extends layout
+<layout-use("./layout.marko") authenticated=data.hat.authenticated hatDomain=data.hat.domain>
+  <layout-put into="container">
+  <h2>Photo synchronisation options</h2>
 
-block content
-  h2 Photo synchronisation options
-  p.plug-info Please select folders to be synchronised.
-  p.plug-info Available folders:
-  #tree.treeview
-  .container
-    div.actions
-      button.plug-button#submit-folder-list(type="submit") Add Selected Folders
+  <p class="plug-info">Please select Dropbox folders to be synchronised.</p>
+  <p class="plug-info">Available folders:</p>
 
-  script.
+  <div id="tree" class="treeview"></div>
+
+  <div class="actions container">
+    <button class="plug-button" id="submit-folder-list" type="submit">Start synchronising Dropbox photos</button>
+  </div>
+
+  <script>
     var foldersToSync = [];
 
     $('#tree').treeview({
@@ -20,7 +22,7 @@ block content
       showBorder: false,
       showCheckbox: true,
       showTags: true,
-      data: !{JSON.stringify(folderTree)},
+      data: ${JSON.stringify(data.folderTree)},
 
       onNodeChecked: function(event, node) {
         var nodeId = node.nodeId;
@@ -52,3 +54,7 @@ block content
       }, 'json');
 
     });
+
+    </script>
+  </layout-put>
+</layout-use>

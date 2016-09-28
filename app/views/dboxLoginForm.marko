@@ -1,0 +1,13 @@
+<layout-use("./layout.marko") authenticated=data.hat.authenticated hatDomain=data.hat.domain>
+  <layout-put into="container">
+    <h2>Dropbox Login</h2>
+
+    <p class="plug-info">Please click the button below to login to Dropbox. You will be directed to Dropbox's website to complete the login.</p>
+
+    <p class="plug-info">Note: if you have recently logged into Dropbox, the process could be automatic.</p>
+
+    <div class="container">
+      <a href="https://www.dropbox.com/1/oauth2/authorize?client_id=${data.dboxAppKey}&redirect_uri=${data.redirectUri}&response_type=code" class="plug-button">Login with Dropbox</a>
+    </div>
+  </layout-put>
+</layout-use>

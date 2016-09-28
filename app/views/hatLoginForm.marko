@@ -1,0 +1,29 @@
+<layout-use("./layout.marko") authenticated=data.hat.authenticated hatDomain=data.hat.domain>
+  <layout-put into="container">
+    <h2>HAT Login</h2>
+
+    <p class="plug-info">Please enter your Personal HAT Address (PHATA). You will then be directed to the HAT to log in with your password. If you are already logged onto to your HAT and/or have entered your HAT password recently, the process will be automatic.</p>
+
+    <form class="container" id="hat-login" name="hatLogin" method="post" action="/dataplug/hat">
+      <div class="form-group">
+        <!-- <label for="hat-domain">Your personal HAT address</label> -->
+        <input type="text" id="hat-domain" name="hatDomain" placeholder="Your personal HAT address" value=data.hatDomain />
+      </div>
+
+      <div class="form-group actions">
+        <button type="submit" class="plug-button">Login with HAT</button>
+      </div>
+    </form>
+
+    <script>
+      window.onload = function() {
+        document.getElementById("hat-login").onsubmit = function() {
+          var hatDomain = document.getElementById("hat-domain").value;
+          window.location.href = "https://" + hatDomain + "/hatlogin?name=Dropbox&" +
+            "redirect=https://photos-plug.hubofallthings.com/hat/authenticate";
+          return false;
+        }
+      }
+    </script>
+  </layout-put>
+</layout-use>
