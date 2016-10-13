@@ -74,7 +74,7 @@ router.post('/webhook', (req, res, next) => {
     const changedAccounts = req.body.list_folder.accounts;
 
     console.log(`[DBOX Webhook][${new Date()}] Posted update with ${changedAccounts.length} accounts`);
-    async.series(changedAccounts, update.addNewJobsByAccount, (err) => {
+    async.eachSeries(changedAccounts, update.addNewJobsByAccount, (err) => {
       console.log('[DBOX Webhook] ...did something...');
       if (err) {
         console.log(`[ERROR][${new Date()}] Webhook failed to submit update jobs`);
