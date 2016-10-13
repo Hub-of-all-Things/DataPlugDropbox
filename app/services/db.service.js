@@ -126,6 +126,7 @@ exports.updateDboxFolder = (folder, isSuccess, nextRunAt, callback) => {
   }
 
   let docUpdate = {
+    cursor: folder.cursor,
     nextRunAt: nextRunAt,
     lockedAt: null
   };
