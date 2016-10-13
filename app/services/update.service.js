@@ -51,7 +51,6 @@ exports.addMetadataJob = (hatDomain, sourceAccessToken, hatAccessToken) => {
 
 exports.addNewJobsByAccount = (account, callback) => {
   db.getAllDboxFoldersByAccount(account, onQueueJobs, (err, results) => {
-    console.log("DATABASE RESULT", err, results);
     if (err) {
       return callback(err);
     }
