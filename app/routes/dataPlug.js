@@ -21,21 +21,21 @@ const confirmationPage = require('../views/confirmationPage.marko');
 router.use(helpers.authMiddleware);
 
 router.get('/main', (req, res, next) => {
-  // market.connectHat(req.session.hat.domain, (err) => {
-  //   if (err) {
-  //     console.log(`[ERROR][${new Date()}]`, err);
-  //     req.dataplug = { statusCode: '502' };
-  //     return next();
-  //   }
+  market.connectHat(req.session.hat.domain, (err) => {
+    if (err) {
+      console.log(`[ERROR][${new Date()}]`, err);
+      req.dataplug = { statusCode: '502' };
+      return next();
+    }
 
-  //   hat.getAccessToken(req.session.hat.domain, (err, hatAccessToken) => {
-  //     if (err) {
-  //       console.log(`[ERROR][${new Date()}]`, err);
-  //       req.dataplug = { statusCode: '401' };
-  //       return next();
-  //     }
+    hat.getAccessToken(req.session.hat.domain, (err, hatAccessToken) => {
+      if (err) {
+        console.log(`[ERROR][${new Date()}]`, err);
+        req.dataplug = { statusCode: '401' };
+        return next();
+      }
 
-  //     req.session.hat.accessToken = hatAccessToken;
+      req.session.hat.accessToken = hatAccessToken;
 
       db.countDataSources(req.session.hat.domain, (err, count) => {
         if (err) {
@@ -65,8 +65,8 @@ router.get('/main', (req, res, next) => {
           });
         }
       });
-  //   });
-  // });
+    });
+  });
 
 }, errors.renderErrorPage);
 
