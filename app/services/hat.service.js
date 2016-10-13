@@ -95,7 +95,10 @@ exports.updateDataSource = (dataSource, folder, callback) => {
     ];
 
     async.waterfall(procedure, (err, records) => {
-      if (err) {
+      if (err && err.message === 'No data to process') {
+        console.log('[HAT service] Nothing to do.');
+        return callback(null);
+      } else if (err) {
         console.log('There has been a problem updating ' + dataSource.hatHost + ' at ' + Date.now());
         return callback(err);
       } else {

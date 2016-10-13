@@ -101,6 +101,11 @@ exports.getFolderContent = (accessToken, folder, callback) => {
       const photoArray = internals.filterByType(body.entries, 'photo');
       const validPhotoArray = internals.modifyInvalidKeys(photoArray);
 
+      if (validPhotoArray.length < 1) {
+        console.log('[DBOX] No data to process.');
+        return callback(new Error('No data to process'));
+      }
+
       return callback(null, validPhotoArray);
     } else {
       return callback(new Error('Invalid response from Dropbox'));
