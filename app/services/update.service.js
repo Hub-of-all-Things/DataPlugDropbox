@@ -51,6 +51,7 @@ exports.addMetadataJob = (hatDomain, sourceAccessToken, hatAccessToken) => {
 
 exports.addNewJobsByAccount = (account, callback) => {
   db.getAllDboxFoldersByAccount(account, onQueueJobs, (err, results) => {
+    console.log("Folders to update", results);
     if (err) return callback(err);
       const tasks = results.map((result) => {
         return {
@@ -75,6 +76,7 @@ function work(item, cb) {
       }
 
       hat.updateDataSource(item.dataSource, item.updateInfo, (err) => {
+        console.log("Updating data source", item.dataSource, item.updateInfo, err);
         const currentTime = new Date();
 
         const isSuccess = !err;
