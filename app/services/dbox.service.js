@@ -132,9 +132,10 @@ exports.revokeToken = (accessToken, callback) => {
 };
 
 internals.filterByType = (array, type) => {
+  const testRegex = new RegExp("\.(?:jpg|gif|png)$");
   return array.filter((obj) => {
-    if (obj['media_info'] && obj['media_info']['metadata']
-      && obj['media_info']['metadata']['.tag'] === type) {
+    if (testRegex.test(obj['path_lower']) || (obj['media_info'] && obj['media_info']['metadata']
+      && obj['media_info']['metadata']['.tag'] === type)) {
       return true;
     } else {
       return false;
