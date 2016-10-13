@@ -101,6 +101,11 @@ exports.getFolderContent = (accessToken, folder, callback) => {
       const photoArray = internals.filterByType(body.entries, 'photo');
       const validPhotoArray = internals.modifyInvalidKeys(photoArray);
 
+      if (validPhotoArray.length < 1) {
+        console.log('[DBOX] No data to process.');
+        return callback(new Error('No data to process'));
+      }
+
       return callback(null, validPhotoArray);
     } else {
       return callback(new Error('Invalid response from Dropbox'));
@@ -127,9 +132,11 @@ exports.revokeToken = (accessToken, callback) => {
 };
 
 internals.filterByType = (array, type) => {
+  // TODO: review accepted file formats
+  const testRegex = new RegExp("\.(?:jpg|gif|png)$");
   return array.filter((obj) => {
-    if (obj['media_info'] && obj['media_info']['metadata']
-      && obj['media_info']['metadata']['.tag'] === type) {
+    if (testRegex.test(obj['path_lower']) || (obj['media_info'] && obj['media_info']['metadata']
+      && obj['media_info']['metadata']['.tag'] === type)) {
       return true;
     } else {
       return false;

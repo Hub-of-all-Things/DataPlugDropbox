@@ -51,18 +51,21 @@ exports.addMetadataJob = (hatDomain, sourceAccessToken, hatAccessToken) => {
 
 exports.addNewJobsByAccount = (account, callback) => {
   db.getAllDboxFoldersByAccount(account, onQueueJobs, (err, results) => {
-    if (err) return callback(err);
-      const tasks = results.map((result) => {
-        return {
-          task: "UPDATE_RECORDS",
-          updateInfo: result,
-          dataSource: result.dataSource
-        };
-      });
+    if (err) {
+      return callback(err);
+    }
 
-      internals.addNewJobs(tasks);
-      return callback(null);
+    const tasks = results.map((result) => {
+      return {
+        task: "UPDATE_RECORDS",
+        updateInfo: result,
+        dataSource: result.dataSource
+      };
     });
+
+    internals.addNewJobs(tasks);
+    return callback(null);
+  });
 };
 
 function work(item, cb) {
