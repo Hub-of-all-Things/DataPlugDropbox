@@ -1,4 +1,4 @@
-![Hub of All things](http://hubofallthings.com/wp-content/uploads/banner21.png)
+
 
 # Photos Data Plug for HAT
 
